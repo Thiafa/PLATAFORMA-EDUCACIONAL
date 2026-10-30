@@ -36,11 +36,12 @@ async function boot() {
 }
 const ready = boot();
 self.onmessage = async (e) => {
-  const { id, code } = e.data;
+  // kit: código extra que a página carrega antes do aluno (ex.: o mini-Laravel da L2)
+  const { id, code, kit } = e.data;
   await ready;
   out = [];
   let exit = 0, fatal = null;
-  try { await php.refresh(); await php.run(PRELUDE); out = []; exit = await php.run(code); } catch (err) { fatal = String(err && err.message || err); }
+  try { await php.refresh(); await php.run(PRELUDE); if (kit) await php.run(kit); out = []; exit = await php.run(code); } catch (err) { fatal = String(err && err.message || err); }
   // flush
   await new Promise(r => setTimeout(r, 10));
   self.postMessage({ id, exit, fatal, out });

@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laravel 2 · PHP: classes, objetos e organização do código — Greenn School</title>
+<style>
+  :root{
+    --bg:#15171E; --panel:#1F2330; --panel2:#262B3A; --line:#323849;
+    --ink:#EDEAE0; --muted:#9AA0AE; --acc:#F0C23B; --ok:#7FD18B; --err:#FF7A7A;
+    --str:#A8D5A2; --kw:#F0C23B; --num:#F4A77A; --com:#7E879B; --bool:#8FC7FF;
+    --fs:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .app{display:grid;grid-template-columns:290px 1fr;height:100vh}
+  /* Sidebar */
+  aside{background:#11131A;border-right:1px solid var(--line);overflow-y:auto;padding:24px 0}
+  .brand{padding:0 24px 20px;border-bottom:1px solid var(--line);margin-bottom:12px}
+  .brand .num{font-family:"JetBrains Mono",Consolas,monospace;color:var(--acc);font-size:40px;font-weight:700;line-height:1}
+  .brand .t{font-size:20px;font-weight:600;margin-top:8px}
+  .brand .s{font-size:14px;color:var(--muted);margin-top:4px}
+  .grp{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:16px 24px 6px}
+  .nav{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:inherit;font-size:16px;padding:9px 24px;cursor:pointer;border-left:3px solid transparent}
+  .nav:hover{background:#1A1D26}
+  .nav.on{background:#1F2330;border-left-color:var(--acc);color:var(--acc);font-weight:600}
+  .nav .n{font-family:Consolas,monospace;color:var(--muted);margin-right:8px;font-size:14px}
+  /* Main */
+  main{display:flex;flex-direction:column;min-width:0;padding:28px 36px;gap:18px;overflow:hidden}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+  .eyebrow{display:inline-block;background:var(--acc);color:var(--bg);font-weight:700;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:6px}
+  h1{margin:10px 0 6px;font-size:calc(var(--fs) * 1.6);line-height:1.15}
+  .desc{color:#C4C8D2;font-size:calc(var(--fs) * .82);line-height:1.5;max-width:1100px}
+  .desc code,.try code{font-family:"JetBrains Mono",Consolas,monospace;background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--acc)}
+  .try{margin-top:10px;font-size:calc(var(--fs) * .72);color:var(--muted)}
+  .try b{color:var(--ink)}
+  .tools{display:flex;gap:8px;flex-shrink:0}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:var(--muted)}
+  .btn.run{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:700;font-size:17px;padding:12px 22px}
+  .btn.run:hover{filter:brightness(1.08)}
+  .work{flex:1;display:grid;grid-template-columns:1.25fr 1fr;gap:18px;min-height:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .card .hd{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+  .card .hd .dots{display:flex;gap:6px}
+  .card .hd .dots i{width:10px;height:10px;border-radius:50%;background:#3A4052;display:block}
+  .hint{text-transform:none;letter-spacing:0;font-size:13px}
+  /* Editor (textarea sobre pre com cores) */
+  .editor{position:relative;flex:1;min-height:0}
+  .editor pre,.editor textarea{position:absolute;inset:0;margin:0;padding:18px 20px;font-family:"JetBrains Mono","Fira Code",Consolas,"Courier New",monospace;font-size:var(--fs);line-height:1.55;white-space:pre;overflow:auto;tab-size:2;border:0}
+  .editor pre{color:#E6E8EE;pointer-events:none}
+  .editor textarea{background:transparent;color:transparent;caret-color:var(--acc);resize:none;outline:none}
+  .editor textarea::selection{background:rgba(240,194,59,.28);color:transparent}
+  .k{color:var(--kw)} .s{color:var(--str)} .c{color:var(--com);font-style:italic} .d{color:var(--num)} .b{color:var(--bool)}
+  /* Saída */
+  .out{flex:1;overflow:auto;padding:14px 0;font-family:"JetBrains Mono",Consolas,monospace;font-size:var(--fs);line-height:1.5}
+  .out .ln{display:flex;gap:14px;padding:3px 20px;border-bottom:1px solid #262A37;animation:in .18s ease-out both}
+  .out .ln .i{color:#555C6E;min-width:2ch;text-align:right;user-select:none}
+  .out .ln.err{color:var(--err);background:rgba(255,122,122,.07)}
+  .out .ln.tip{color:var(--acc);font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  .out .empty{color:#5C6376;padding:6px 20px;font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  .status{padding:10px 16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);min-height:40px}
+  .status.ok{color:var(--ok)} .status.bad{color:var(--err)}
+  @keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .foot{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:14px}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px;color:var(--ink)}
+  .task{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+  .task .obj{margin:0}
+  .task-cols{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;align-items:start}
+  .lbl{margin:0 0 6px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);font-weight:700}
+  .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+  .expbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+  .expbox pre{margin:0;font-family:"JetBrains Mono",Consolas,monospace;font-size:calc(var(--fs) * .72);color:var(--ok);white-space:pre-wrap;max-height:180px;overflow:auto}
+  .out .ln.win{color:var(--ok);background:rgba(127,209,139,.08);font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  @media (max-width:1000px){.task-cols{grid-template-columns:1fr}}
+  #mnav{display:none}
+  @media (max-width:1000px){
+    #mnav{display:block;width:100%;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:16px;margin-bottom:6px}
+    .hint{display:none}
+    .tools{flex-wrap:wrap}
+    .app{grid-template-columns:1fr;height:auto}
+    aside{display:none}
+    main{padding:18px 16px;overflow:visible}
+    .work{grid-template-columns:1fr}
+    .editor{min-height:320px}.out{min-height:200px}
+    .top{flex-direction:column}
+  }
+
+  :root{--acc:#F43F5E}
+  .nav.on{color:#FDA4AF}
+  .v{color:#7DD3FC}
+  .desc code,.try code{color:#FDA4AF}
+  .btn.run{background:#F43F5E;border-color:#F43F5E;color:#fff}
+  .btn.run:disabled{opacity:.6;cursor:wait}
+  .eyebrow{background:#F43F5E;color:#fff}
+  .expbox pre{color:var(--ok)}
+  .lbl{color:#FDA4AF}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <div class="num" style="color:#F43F5E">L2</div>
+      <div class="t">PHP: classes, objetos e organização do código</div>
+      <div class="s">e o caminho de um pedido no Laravel: rota → controller → view</div><a href="/php-02/apostila-php-02.pdf" target="_blank" style="display:inline-block;margin-top:12px;font-size:13px;color:#15171E;background:#F43F5E;font-weight:600;padding:6px 12px;border-radius:8px;text-decoration:none">⬇ Apostila em PDF</a><a href="/#laravel" style="display:block;margin-top:10px;font-size:13px;color:#9AA0AE">← todas as aulas</a>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+
+  <main>
+    <select id="mnav" aria-label="Escolher exemplo"></select>
+    <div class="top">
+      <div>
+        <span class="eyebrow" id="grp"></span>
+        <h1 id="title"></h1>
+        <div class="desc" id="desc"></div>
+        <div class="try" id="try"></div>
+      </div>
+      <div class="tools">
+        <button class="btn" id="smaller" title="Diminuir fonte">A−</button>
+        <button class="btn" id="bigger" title="Aumentar fonte (projetor)">A+</button>
+        <button class="btn" id="reset" title="Voltar ao código original">↺ Restaurar</button>
+        <button class="btn run" id="run">▶ Executar</button>
+      </div>
+    </div>
+
+    <div class="work">
+      <div class="card">
+        <div class="hd"><span class="dots"><i></i><i></i><i></i></span><span>script.php · pode editar</span><span class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> executa</span></div>
+        <div class="editor">
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código PHP"></textarea>
+        </div>
+      </div>
+      <div class="card">
+        <div class="hd"><span>Saída do PHP</span><span style="display:flex;gap:6px"><button class="btn" id="aspage" style="padding:4px 10px;font-size:12px;text-transform:none;letter-spacing:0">🌐 ver como página</button><button class="btn" id="clear" style="padding:4px 10px;font-size:12px">limpar</button></span></div>
+        <iframe id="pageframe" hidden style="flex:1;width:100%;border:0;background:#fff;min-height:0" title="Saída como página"></iframe><div class="out" id="out"><div class="empty">Clique em ▶ Executar para ver o resultado aqui.</div></div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <button class="btn" id="prev">← Anterior</button>
+      <span id="pos"></span>
+      <button class="btn" id="next">Próximo →</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== EXEMPLOS =====================
+  Para criar um novo exemplo, copie um bloco <section class="ex"> abaixo.
+  data-group = grupo no menu | data-title = título | .desc = explicação | .try = desafio
+====================================================== -->
+<div id="examples" hidden>
+<section class="ex" data-group="Classes e objetos" data-title="Classe e objeto: a forma e o bolo">
+  <div class="desc">Na L1 a ficha de um aluno era um array associativo. Quando muitas coisas têm as mesmas informações (e as mesmas ações), a gente cria uma <b>classe</b>: o <b>molde</b> que diz o que todo aluno tem. Cada aluno de verdade é um <b>objeto</b>, criado com <code>new</code>. A classe é a forma; os objetos são os bolos. Para acessar uma propriedade o PHP usa a <b>setinha</b> <code>-&gt;</code> (o ponto do JavaScript: <code>carro.marca</code> vira <code>$carro-&gt;marca</code>).</div>
+  <div class="try"><b>Experimente:</b> crie um terceiro carro com a sua marca favorita. Depois tente <code>$meuCarro-&gt;ano = "velho";</code> e veja o PHP reclamar do tipo.</div>
+<script type="text/x-code">
+<?php
+class Carro {
+  public string $marca;
+  public string $cor;
+  public int $ano = 2024;   // valor padrão
+}
+
+$meuCarro = new Carro();      // new cria um objeto a partir da classe
+$meuCarro->marca = "Fiat";    // -> acessa a propriedade
+$meuCarro->cor = "vermelho";
+
+$outro = new Carro();         // outro objeto, com os próprios valores
+$outro->marca = "VW";
+$outro->cor = "preto";
+
+echo "Meu carro: $meuCarro->marca $meuCarro->cor\n";
+echo "O outro: $outro->marca $outro->cor\n";
+echo "Ano: $meuCarro->ano\n";
+
+dump($meuCarro);
+</script>
+</section>
+
+<section class="ex" data-group="Classes e objetos" data-title="Métodos e $this">
+  <div class="desc">Uma classe não guarda só dados: guarda também as <b>ações</b> sobre esses dados. Uma função dentro da classe se chama <b>método</b>, e é chamada com a setinha: <code>$pedido-&gt;total()</code>. Dentro do método, <code>$this</code> quer dizer "<b>este</b> objeto aqui": <code>$this-&gt;itens</code> são os itens do pedido que chamou o método (igual ao <code>this</code> do JavaScript).</div>
+  <div class="try"><b>Experimente:</b> adicione uma sobremesa ao pedido. Depois crie um <code>$pedido2 = new Pedido()</code> e veja que cada pedido tem os próprios itens.</div>
+<script type="text/x-code">
+<?php
+class Pedido {
+  public array $itens = [];
+
+  public function adicionar(string $item, float $preco): void {
+    $this->itens[] = ["item" => $item, "preco" => $preco];
+  }
+
+  public function total(): float {
+    $soma = 0;
+    foreach ($this->itens as $i) {
+      $soma += $i["preco"];
+    }
+    return $soma;
+  }
+}
+
+$pedido = new Pedido();
+$pedido->adicionar("Pizza", 45);
+$pedido->adicionar("Refrigerante", 8.5);
+
+echo count($pedido->itens) . " itens\n";
+echo "Total: R$ " . number_format($pedido->total(), 2, ",", ".") . "\n";
+</script>
+</section>
+
+<section class="ex" data-group="Classes e objetos" data-title="Construtor: o objeto já nasce pronto">
+  <div class="desc">Preencher propriedade por propriedade cansa (e dá para esquecer uma). O <b>construtor</b> <code>__construct</code> é um método especial que roda sozinho no <code>new</code>: o que você passa em <code>new Aluno("Ana", "Laravel")</code> chega nele. O PHP 8 tem uma <b>forma curta</b>, muito usada no Laravel: escrever <code>public</code> no parâmetro do construtor já cria e preenche a propriedade.</div>
+  <div class="try"><b>Experimente:</b> crie <code>new Aluno("Caio")</code> sem o curso e leia o erro. Depois crie um professor passando a matéria.</div>
+<script type="text/x-code">
+<?php
+class Aluno {
+  public string $nome;
+  public string $curso;
+
+  public function __construct(string $nome, string $curso) {
+    $this->nome = $nome;
+    $this->curso = $curso;
+  }
+
+  public function apresentar(): string {
+    return "Oi, eu sou $this->nome e estudo $this->curso.";
+  }
+}
+
+$ana = new Aluno("Ana", "Laravel");
+echo $ana->apresentar(), "\n";
+
+// forma curta (PHP 8): o "public" no parâmetro cria e preenche a propriedade
+class Professor {
+  public function __construct(
+    public string $nome,
+    public string $materia = "PHP",
+  ) {}
+}
+
+$prof = new Professor("Rita");
+echo "$prof->nome ensina $prof->materia\n";
+</script>
+</section>
+
+<section class="ex" data-group="Classes e objetos" data-title="public e private: protegendo os dados">
+  <div class="desc"><code>public</code> pode ser usado de qualquer lugar; <code>private</code> só de <b>dentro</b> da própria classe. Isso se chama <b>encapsulamento</b>: o saldo da conta é <code>private</code>, então ninguém faz <code>$conta-&gt;saldo = 1000000</code>. Quem quer mexer no saldo tem que passar pelos métodos, que conferem as regras (não depositar valor negativo, não sacar mais do que tem). Existe ainda o <code>protected</code>: privado, mas as classes filhas enxergam (próximo exemplo).</div>
+  <div class="try"><b>Experimente:</b> tire o <code>//</code> da última linha e execute: o PHP não deixa mexer no saldo por fora. Depois tente depositar <code>-50</code>.</div>
+<script type="text/x-code">
+<?php
+class ContaBancaria {
+  private float $saldo = 0;
+
+  public function __construct(public string $titular) {}
+
+  public function depositar(float $valor): void {
+    if ($valor <= 0) {
+      echo "Valor inválido\n";
+      return;
+    }
+    $this->saldo += $valor;
+  }
+
+  public function sacar(float $valor): void {
+    if ($valor > $this->saldo) {
+      echo "Saldo insuficiente\n";
+      return;
+    }
+    $this->saldo -= $valor;
+  }
+
+  public function verSaldo(): float {
+    return $this->saldo;
+  }
+}
+
+$conta = new ContaBancaria("Ana");
+$conta->depositar(200);
+$conta->sacar(50);
+$conta->sacar(1000);
+echo "$conta->titular tem R$ " . $conta->verSaldo() . "\n";
+
+// $conta->saldo = 1000000;
+</script>
+</section>
+
+<section class="ex" data-group="Classes e objetos" data-title="Herança: extends e parent">
+  <div class="desc">Com <code>extends</code>, uma classe <b>herda</b> tudo de outra (propriedades e métodos) e só acrescenta ou troca o que for diferente. <code>Professor extends Pessoa</code>: todo professor é uma pessoa, com algo a mais. <code>parent::</code> chama a versão da classe mãe. É assim no Laravel inteiro: todo controller <code>extends Controller</code> e todo model <code>extends Model</code>, e é por herança que o seu model ganha prontos métodos como <code>all()</code>, <code>find()</code> e <code>save()</code>.</div>
+  <div class="try"><b>Experimente:</b> crie uma classe <code>Coordenador extends Professor</code> que troca o <code>apresentar()</code> de novo. Depois apague o <code>apresentar()</code> do Professor e veja qual versão roda.</div>
+<script type="text/x-code">
+<?php
+class Pessoa {
+  public function __construct(public string $nome) {}
+
+  public function apresentar(): string {
+    return "Olá, eu sou $this->nome.";
+  }
+}
+
+class Professor extends Pessoa {
+  public function __construct(string $nome, public string $materia) {
+    parent::__construct($nome);   // deixa a Pessoa guardar o nome
+  }
+
+  public function apresentar(): string {
+    return parent::apresentar() . " Dou aula de $this->materia.";
+  }
+}
+
+$caio = new Pessoa("Caio");
+$rita = new Professor("Rita", "Laravel");
+
+echo $caio->apresentar(), "\n";
+echo $rita->apresentar(), "\n";
+var_dump($rita instanceof Pessoa);   // todo professor é uma pessoa
+</script>
+</section>
+
+<section class="ex" data-group="Classes e objetos" data-title="static, constantes e o ::">
+  <div class="desc">Algumas coisas são da <b>classe</b>, não de um objeto: uma constante (<code>const</code>) ou um método <code>static</code>. Para usá-las não precisa de <code>new</code>: usa-se o <b>quatro-pontos</b> <code>::</code>, como em <code>Escola::NOME</code>. Dentro da classe, <code>self::</code> aponta para ela mesma. Você vai ver muito <code>::</code> no Laravel: <code>Route::get(...)</code>, <code>Aluno::all()</code> e o <code>AlunoController::class</code>, que dá o nome completo da classe como texto.</div>
+  <div class="try"><b>Experimente:</b> matricule mais dois alunos e veja o total subir. Depois crie uma constante <code>CIDADE</code> e mostre.</div>
+<script type="text/x-code">
+<?php
+class Escola {
+  const NOME = "Greenn School";
+  public static int $matriculas = 0;
+
+  public static function matricular(string $aluno): string {
+    self::$matriculas++;
+    return "$aluno matriculado(a) na " . self::NOME;
+  }
+}
+
+echo Escola::NOME, "\n";
+echo Escola::matricular("Ana"), "\n";
+echo Escola::matricular("Caio"), "\n";
+echo "Total: " . Escola::$matriculas . " matrículas\n";
+echo Escola::class, "\n";   // o nome da classe, como texto
+</script>
+</section>
+
+<section class="ex" data-group="Organização do código" data-title="Arrays de objetos: o que vem do banco">
+  <div class="desc">Na L1, a turma era uma lista de arrays associativos. No Laravel, quando você busca no banco (<code>Aluno::all()</code>), volta uma <b>lista de objetos</b>, e você acessa cada campo com a setinha: <code>$aluno-&gt;nome</code>. Tudo o que você sabe de arrays continua valendo: <code>foreach</code>, <code>count</code>, <code>array_filter</code>, <code>array_map</code>.</div>
+  <div class="try"><b>Experimente:</b> adicione um produto esgotado e um disponível. Depois calcule o preço médio dos disponíveis.</div>
+<script type="text/x-code">
+<?php
+class Produto {
+  public function __construct(
+    public string $nome,
+    public float $preco,
+    public bool $emEstoque = true,
+  ) {}
+}
+
+$produtos = [
+  new Produto("Caneca", 25),
+  new Produto("Camiseta", 59.9),
+  new Produto("Boné", 45, false),
+];
+
+foreach ($produtos as $p) {
+  $aviso = $p->emEstoque ? "" : " (esgotado)";
+  echo "$p->nome: R$ " . number_format($p->preco, 2, ",", ".") . "$aviso\n";
+}
+
+$disponiveis = array_filter($produtos, fn($p) => $p->emEstoque);
+$nomes = array_map(fn($p) => $p->nome, $disponiveis);
+echo "Disponíveis: " . implode(", ", $nomes) . "\n";
+</script>
+</section>
+
+<section class="ex" data-group="Organização do código" data-title="Namespaces e use: o sobrenome das classes">
+  <div class="desc">Num projeto grande existem centenas de classes, e duas podem ter o mesmo nome. O <b>namespace</b> é o "sobrenome" da classe: <code>App\Models\Aluno</code> é a classe <code>Aluno</code> da "família" <code>App\Models</code>. Para usar uma classe de outro namespace, você importa com <code>use</code> (como o <code>import</code> do JavaScript). No Laravel, <b>cada classe fica no seu arquivo</b> e o namespace segue a pasta: <code>App\Models\Aluno</code> mora em <code>app/Models/Aluno.php</code>. Aqui, como só temos um arquivo, cada bloco <code>namespace { }</code> faz o papel de um arquivo.</div>
+  <div class="try"><b>Experimente:</b> apague a linha <code>use App\Models\Aluno;</code> e leia o erro: sem o <code>use</code>, o PHP procura um <code>Aluno</code> na família errada.</div>
+<script type="text/x-code">
+<?php
+namespace App\Models {
+  // arquivo app/Models/Aluno.php
+  class Aluno {
+    public function __construct(public string $nome) {}
+  }
+}
+
+namespace App\Http\Controllers {
+  // arquivo app/Http/Controllers/AlunoController.php
+  use App\Models\Aluno;
+
+  class AlunoController {
+    public function index(): string {
+      $ana = new Aluno("Ana");
+      return "Aluno carregado: $ana->nome";
+    }
+  }
+}
+
+namespace {
+  // o resto do programa
+  use App\Http\Controllers\AlunoController;
+
+  $controller = new AlunoController();
+  echo $controller->index(), "\n";
+  echo AlunoController::class, "\n";
+  echo App\Models\Aluno::class, "\n";
+}
+</script>
+</section>
+
+<section class="ex" data-group="Laravel por dentro" data-title="A estrutura de pastas do Laravel">
+  <div class="desc">Um projeto Laravel novo já vem com as pastas organizadas, e cada tipo de arquivo tem o seu lugar: é o que se chama de <b>convenção</b>. Quase todo dia você vai abrir só quatro lugares: <code>routes/web.php</code> (as URLs), <code>app/Http/Controllers</code> (quem atende cada URL), <code>app/Models</code> (os dados) e <code>resources/views</code> (o HTML). E o nome completo de qualquer classe diz onde está o arquivo dela.</div>
+  <div class="try"><b>Experimente:</b> adicione <code>"storage"</code> (arquivos enviados e logs) e <code>"tests"</code> (testes automáticos) à lista. Depois troque a classe do final por <code>App\Models\Curso</code>.</div>
+<script type="text/x-code">
+<?php
+// As pastas de um projeto Laravel (laravel new escola).
+// ★ = as que você vai abrir quase todo dia
+$pastas = [
+  "routes/web.php"       => "★ rotas: qual URL chama qual controller",
+  "app/Http/Controllers" => "★ controllers: recebem o pedido e decidem a resposta",
+  "app/Models"           => "★ models: uma classe por tabela do banco",
+  "resources/views"      => "★ views: o HTML (Blade) das páginas",
+  "database/migrations"  => "a estrutura das tabelas (aula L5)",
+  "public"               => "a única pasta aberta ao navegador (index.php, imagens)",
+  "config"               => "configurações (nome do app, banco, e-mail…)",
+  ".env"                 => "senhas e dados do ambiente (nunca vai para o Git)",
+  "vendor"               => "o código do Laravel e dos pacotes (não mexa)",
+  "artisan"              => "o comando do terminal: php artisan …",
+];
+
+foreach ($pastas as $pasta => $oQueTem) {
+  echo str_pad($pasta, 21) . " → $oQueTem\n";
+}
+
+// o namespace da classe diz onde está o arquivo
+$classe = "App\\Http\\Controllers\\AlunoController";
+$arquivo = lcfirst(str_replace("\\", "/", $classe)) . ".php";
+echo "\n$classe\n  mora em: $arquivo\n";
+</script>
+</section>
+
+<section class="ex" data-group="Laravel por dentro" data-title="Rotas: cada URL chama um código">
+  <div class="desc">Quando o navegador pede <code>/sobre</code>, quem decide o que responder é a <b>rota</b>. No Laravel, as rotas ficam em <code>routes/web.php</code> e são assim: <code>Route::get('/sobre', function () { return 'Sobre'; });</code>. Para ver que não tem mágica, aqui está um roteador de brinquedo feito só com o que você já sabe: uma classe com um array estático de URLs e funções. Se nenhuma rota bate com a URL, a resposta é o famoso <b>404</b>. <b>Daqui para a frente</b>, este playground já traz um <code>Route</code>, um <code>view()</code> e um <code>visitar()</code> prontos (como o <code>dd</code>), parecidos com os do Laravel.</div>
+  <div class="try"><b>Experimente:</b> crie a rota <code>/cursos</code> e visite de novo. Depois visite <code>/Sobre</code> com S maiúsculo.</div>
+<script type="text/x-code">
+<?php
+// um roteador de brinquedo: um array de URL => função
+class Rota {
+  private static array $rotas = [];
+
+  public static function get(string $url, Closure $acao): void {
+    self::$rotas[$url] = $acao;
+  }
+
+  public static function visitar(string $url): void {
+    echo "GET $url\n";
+    if (isset(self::$rotas[$url])) {
+      $acao = self::$rotas[$url];
+      echo "  " . $acao() . "\n";
+    } else {
+      echo "  404 | Página não encontrada\n";
+    }
+  }
+}
+
+// routes/web.php: cada URL ligada a uma função
+Rota::get("/", fn() => "Bem-vindo à Greenn School!");
+Rota::get("/sobre", fn() => "Aulas de programação aos sábados.");
+Rota::get("/contato", function () {
+  return "Fale com a gente na secretaria.";
+});
+
+// o navegador pedindo páginas
+Rota::visitar("/");
+Rota::visitar("/sobre");
+Rota::visitar("/cursos");   // não tem rota: 404
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Laravel por dentro" data-title="Controller: a rota chama um método">
+  <div class="desc">Com 50 páginas, um <code>web.php</code> cheio de funções vira bagunça. Por isso a rota só aponta para um <b>controller</b>: uma classe que junta as ações de um assunto (tudo de cursos no <code>CursoController</code>). <code>[CursoController::class, "index"]</code> quer dizer "chame o método <code>index</code> dessa classe". Um pedaço da URL entre chaves, como <code>{id}</code>, chega como <b>parâmetro</b> do método. No Laravel, o controller é criado com <code>php artisan make:controller CursoController</code>.</div>
+  <div class="try"><b>Experimente:</b> visite <code>/cursos/2</code>. Depois crie a rota <code>/cursos/{id}/aulas</code> chamando um método novo <code>aulas($id)</code>.</div>
+<script type="text/x-code">
+<?php
+// app/Http/Controllers/CursoController.php
+class CursoController extends Controller {
+  private array $cursos = ["HTML", "CSS", "JavaScript", "Laravel"];
+
+  public function index(): string {
+    return "Cursos: " . implode(", ", $this->cursos);
+  }
+
+  public function show(string $id): string {
+    $curso = $this->cursos[$id - 1] ?? null;   // ?? : se não existir, null
+    if (!$curso) {
+      return "Curso $id não existe";
+    }
+    return "Curso $id: $curso";
+  }
+}
+
+// routes/web.php
+Route::get("/cursos", [CursoController::class, "index"]);
+Route::get("/cursos/{id}", [CursoController::class, "show"]);
+
+// o navegador
+visitar("/cursos");
+visitar("/cursos/4");
+visitar("/cursos/9");
+visitar("/alunos");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Laravel por dentro" data-title="View: o controller devolve HTML">
+  <div class="desc">O controller <b>não escreve HTML</b>: ele junta os dados e entrega para uma <b>view</b>, o arquivo de HTML com buracos que você viu no fim da L1. <code>view("cursos.index", [...])</code> quer dizer "use o arquivo <code>resources/views/cursos/index</code>"; cada chave do array vira uma <b>variável</b> dentro da view (<code>"titulo"</code> vira <code>$titulo</code>). Aqui o <code>criar_view</code> faz o papel desse arquivo. Clique em <b>🌐 ver como página</b> para ver o resultado.</div>
+  <div class="try"><b>Experimente:</b> passe mais uma chave <code>"professor" =&gt; "Rita"</code> e mostre na view com <code>&lt;?= $professor ?&gt;</code>.</div>
+<script type="text/x-code">
+<?php
+// resources/views/cursos/index.php  (na L3 ele vira index.blade.php)
+criar_view("cursos.index", <<<'HTML'
+<h1><?= $titulo ?></h1>
+<p>Temos <?= count($cursos) ?> cursos:</p>
+<ul>
+<?php foreach ($cursos as $curso): ?>
+  <li><?= $curso ?></li>
+<?php endforeach; ?>
+</ul>
+HTML);
+
+// app/Http/Controllers/CursoController.php
+class CursoController extends Controller {
+  public function index(): string {
+    $cursos = ["HTML", "CSS", "JavaScript", "Laravel"];
+    return view("cursos.index", [
+      "titulo" => "Cursos da Greenn School",
+      "cursos" => $cursos,
+    ]);
+  }
+}
+
+// routes/web.php
+Route::get("/cursos", [CursoController::class, "index"]);
+
+visitar("/cursos");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Laravel por dentro" data-title="O caminho de um pedido: rota → controller → view">
+  <div class="desc">Juntando tudo, este é o caminho de <b>todo</b> pedido no Laravel: <b>①</b> o navegador pede <code>/alunos</code>; <b>②</b> a <b>rota</b> diz qual controller atende; <b>③</b> o <b>controller</b> pede os dados ao <b>model</b> (<code>Aluno::all()</code>); <b>④</b> entrega os dados para a <b>view</b>; <b>⑤</b> a view monta o HTML, que volta para o navegador. Cada bloco <code>namespace</code> abaixo é um arquivo do projeto, na pasta certa. Clique em <b>🌐 ver como página</b>.</div>
+  <div class="try"><b>Experimente:</b> adicione um aluno no <code>all()</code>. Depois crie a rota <code>/alunos/aprovados</code> com um método <code>aprovados()</code> que filtra a lista com <code>array_filter</code>.</div>
+<script type="text/x-code">
+<?php
+namespace App\Models {
+  // app/Models/Aluno.php
+  class Aluno {
+    public function __construct(public string $nome, public float $media) {}
+
+    public function situacao(): string {
+      return $this->media >= 7 ? "aprovado(a)" : "recuperação";
+    }
+
+    // no Laravel, Aluno::all() busca no banco; aqui é uma lista fixa
+    public static function all(): array {
+      return [
+        new Aluno("Ana", 9.5),
+        new Aluno("Caio", 6),
+        new Aluno("Bia", 8),
+      ];
+    }
+  }
+}
+
+namespace App\Http\Controllers {
+  // app/Http/Controllers/AlunoController.php
+  use App\Models\Aluno;
+
+  class AlunoController extends Controller {
+    public function index(): string {
+      $alunos = Aluno::all();           // ③ pede os dados ao model
+      return view("alunos.index", [     // ④ entrega os dados à view
+        "alunos" => $alunos,
+      ]);
+    }
+  }
+}
+
+namespace {
+  use App\Http\Controllers\AlunoController;
+
+  // resources/views/alunos/index.php  ⑤ a view monta o HTML
+  criar_view("alunos.index", <<<'HTML'
+<h1>Alunos da turma</h1>
+<ul>
+<?php foreach ($alunos as $aluno): ?>
+  <li><?= $aluno->nome ?>: <?= $aluno->situacao() ?></li>
+<?php endforeach; ?>
+</ul>
+HTML);
+
+  // routes/web.php  ② a rota escolhe o controller
+  Route::get("/alunos", [AlunoController::class, "index"]);
+
+  visitar("/alunos");   // ① o navegador pede /alunos
+}
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Livre" data-title="Área livre">
+  <div class="desc">Um script PHP vazio para testar o que quiser. O mini-Laravel (<code>Route</code>, <code>view</code>, <code>criar_view</code>, <code>visitar</code>) e o <code>dd</code> estão disponíveis.</div>
+  <div class="try"><b>Dica:</b> use <code>dd($objeto)</code> para espiar qualquer objeto.</div>
+<script type="text/x-code">
+<?php
+class Teste {
+  public string $msg = "funcionou";
+}
+
+$t = new Teste();
+dump($t);
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 01 · Primeira classe" data-expect='["Dom Casmurro custa R$ 39,90"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar uma classe, um objeto e acessar as propriedades.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie a classe <code>Livro</code> com <code>public string $titulo</code> e <code>public float $preco</code>.</li><li>Crie um objeto com <code>new Livro()</code> e preencha: título <code>Dom Casmurro</code>, preço <code>39.9</code>.</li><li>Mostre <code>Dom Casmurro custa R$ 39,90</code> usando <code>-&gt;</code> e <code>number_format</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Dom Casmurro custa R$ 39,90</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Crie um segundo livro e mostre os dois. Depois espie um deles com <code>dump($livro)</code>.</div>
+<script type="text/x-code">
+<?php
+// crie a classe Livro aqui
+
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 02 · Métodos do retângulo" data-expect='["Área: 12", "Perímetro: 14"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar métodos que usam <code>$this</code>.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Na classe <code>Retangulo</code>, crie o método <code>area(): float</code> que devolve largura × altura.</li><li>Crie <code>perimetro(): float</code> que devolve 2 × (largura + altura).</li><li>Crie um retângulo e mostre <code>Área: 12</code> e <code>Perímetro: 14</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Área: 12<br>Perímetro: 14</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Mude a largura do objeto para 10 com <code>$r-&gt;largura = 10</code> antes de mostrar.</div>
+<script type="text/x-code">
+<?php
+class Retangulo {
+  public float $largura = 4;
+  public float $altura = 3;
+
+  // crie os métodos area() e perimetro()
+}
+
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 03 · Construtor" data-expect='["Ana estuda Laravel", "Caio estuda JavaScript"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Usar o construtor para o objeto já nascer pronto.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie a classe <code>Aluno</code> com um <code>__construct</code> que recebe <code>$nome</code> e <code>$curso</code> (pode usar a forma curta com <code>public</code>).</li><li>Crie o método <code>apresentar(): string</code> que devolve <code>Ana estuda Laravel</code>.</li><li>O resto já está pronto embaixo: é só executar.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Ana estuda Laravel<br>Caio estuda JavaScript</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Dê ao curso um valor padrão <code>"Laravel"</code> e crie <code>new Aluno("Bia")</code>.</div>
+<script type="text/x-code">
+<?php
+// crie a classe Aluno aqui
+
+$ana = new Aluno("Ana", "Laravel");
+$caio = new Aluno("Caio", "JavaScript");
+echo $ana->apresentar(), "\n";
+echo $caio->apresentar(), "\n";
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 04 · Conta protegida" data-expect='["Saldo: 150", "Saldo insuficiente", "Saldo: 150"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Proteger um dado com <code>private</code> e só mexer nele por métodos.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>O <code>$saldo</code> já é <code>private</code>. Crie <code>depositar(float $valor)</code>, que soma ao saldo.</li><li>Crie <code>sacar(float $valor)</code>: se o valor for maior que o saldo, mostre <code>Saldo insuficiente</code>; senão, subtraia.</li><li>Crie <code>verSaldo(): float</code>, que devolve o saldo.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Saldo: 150<br>Saldo insuficiente<br>Saldo: 150</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Faça o <code>depositar</code> recusar valores negativos, mostrando <code>Valor inválido</code>.</div>
+<script type="text/x-code">
+<?php
+class ContaBancaria {
+  private float $saldo = 0;
+
+  // crie depositar, sacar e verSaldo
+}
+
+$conta = new ContaBancaria();
+$conta->depositar(100);
+$conta->depositar(50);
+echo "Saldo: " . $conta->verSaldo() . "\n";
+$conta->sacar(500);
+echo "Saldo: " . $conta->verSaldo() . "\n";
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 05 · Herança" data-expect='["Rex diz: Au au!", "Mimi diz: Miau!"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar classes filhas com <code>extends</code> e trocar um método.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>A classe <code>Animal</code> já está pronta: o <code>falar()</code> usa o método <code>som()</code>.</li><li>Crie <code>Cachorro extends Animal</code> com um <code>som()</code> que devolve <code>Au au!</code>.</li><li>Crie <code>Gato extends Animal</code> com um <code>som()</code> que devolve <code>Miau!</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Rex diz: Au au!<br>Mimi diz: Miau!</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Crie um <code>new Animal("Bicho")</code> e veja qual som ele faz.</div>
+<script type="text/x-code">
+<?php
+class Animal {
+  public function __construct(public string $nome) {}
+
+  public function som(): string {
+    return "...";
+  }
+
+  public function falar(): string {
+    return "$this->nome diz: " . $this->som();
+  }
+}
+
+// crie as classes Cachorro e Gato aqui
+
+$rex = new Cachorro("Rex");
+$mimi = new Gato("Mimi");
+echo $rex->falar(), "\n";
+echo $mimi->falar(), "\n";
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 06 · Lista de produtos" data-expect='["- Caneca: R$ 25,00", "- Camiseta: R$ 59,90", "- Boné: R$ 45,00", "Total: R$ 129,90"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Percorrer uma lista de objetos (o formato que vem do banco).</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Com um <code>foreach</code>, mostre cada produto no formato <code>- Caneca: R$ 25,00</code>.</li><li>No mesmo laço, some os preços numa variável <code>$total</code>.</li><li>No fim, mostre <code>Total: R$ 129,90</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>- Caneca: R$ 25,00<br>- Camiseta: R$ 59,90<br>- Boné: R$ 45,00<br>Total: R$ 129,90</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Use <code>array_filter</code> para mostrar só os produtos acima de R$ 30.</div>
+<script type="text/x-code">
+<?php
+class Produto {
+  public function __construct(public string $nome, public float $preco) {}
+}
+
+$produtos = [
+  new Produto("Caneca", 25),
+  new Produto("Camiseta", 59.9),
+  new Produto("Boné", 45),
+];
+
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 07 · Método estático" data-expect='["R$ 25,00", "R$ 1.234,50"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar um método <code>static</code> e chamar com <code>::</code>.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie a classe <code>Formata</code> com <code>public static function dinheiro(float $valor): string</code>.</li><li>Ela devolve o valor no formato <code>R$ 1.234,50</code> (use <code>number_format</code>).</li><li>As chamadas com <code>Formata::dinheiro(...)</code> já estão prontas: sem <code>new</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>R$ 25,00<br>R$ 1.234,50</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Crie <code>Formata::porcentagem(0.25)</code>, que devolve <code>25%</code>.</div>
+<script type="text/x-code">
+<?php
+// crie a classe Formata aqui
+
+echo Formata::dinheiro(25), "\n";
+echo Formata::dinheiro(1234.5), "\n";
+</script>
+</section>
+
+<section class="ex" data-group="Exercícios" data-title="Ex 08 · Onde fica cada arquivo" data-expect='["AlunoController.php → app/Http/Controllers", "web.php → routes", "index.blade.php → resources/views", "Aluno.php → app/Models"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Fixar a estrutura de pastas do Laravel.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Complete a função <code>pasta($arquivo)</code> com um <code>match (true)</code>.</li><li>Termina em <code>Controller.php</code>: <code>app/Http/Controllers</code>; termina em <code>.blade.php</code>: <code>resources/views</code>; é <code>web.php</code>: <code>routes</code>; senão: <code>app/Models</code>.</li><li>Use <code>str_ends_with($arquivo, "Controller.php")</code> para testar o final do nome.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>AlunoController.php → app/Http/Controllers<br>web.php → routes<br>index.blade.php → resources/views<br>Aluno.php → app/Models</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Acrescente a regra das migrations: nomes que começam com <code>create_</code> (use <code>str_starts_with</code>) vão para <code>database/migrations</code>.</div>
+<script type="text/x-code">
+<?php
+function pasta(string $arquivo): string {
+  // complete com match (true) { ... }
+  return "?";
+}
+
+$arquivos = ["AlunoController.php", "web.php", "index.blade.php", "Aluno.php"];
+foreach ($arquivos as $arquivo) {
+  echo "$arquivo → " . pasta($arquivo) . "\n";
+}
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 09 · Rota e controller" data-expect='["Página inicial", "Sobre a Greenn School", "404 | Página não encontrada"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Ligar URLs a métodos de um controller.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie <code>PaginaController extends Controller</code> com <code>home()</code>, que devolve <code>Página inicial</code>, e <code>sobre()</code>, que devolve <code>Sobre a Greenn School</code>.</li><li>Registre as rotas: <code>Route::get("/", [PaginaController::class, "home"]);</code> e a de <code>/sobre</code>.</li><li>As visitas já estão prontas; o <code>/contato</code> não tem rota, então dá 404.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Página inicial<br>Sobre a Greenn School<br>404 | Página não encontrada</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Crie a rota <code>/contato</code> com um método novo, para o 404 sumir.</div>
+<script type="text/x-code">
+<?php
+// app/Http/Controllers/PaginaController.php
+// crie a classe aqui
+
+// routes/web.php
+// registre as rotas aqui
+
+// o navegador (não precisa mexer)
+visitar("/");
+visitar("/sobre");
+visitar("/contato");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 10 · O caminho completo" data-expect='["<h1>Produtos</h1>", "<li>Caneca - R$ 25,00</li>", "<li>Camiseta - R$ 59,90</li>"]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Fazer um pedido percorrer rota → controller → view.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Na view <code>produtos.index</code>, complete o <code>foreach</code> para gerar um <code>&lt;li&gt;Caneca - R$ 25,00&lt;/li&gt;</code> por produto.</li><li>Crie <code>ProdutoController extends Controller</code> com <code>index()</code>, que monta a lista de produtos e devolve <code>view("produtos.index", ["produtos" =&gt; $produtos])</code>.</li><li>Registre a rota <code>/produtos</code> e clique em <b>🌐 ver como página</b>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;h1&gt;Produtos&lt;/h1&gt;<br>&lt;ul&gt;<br>  &lt;li&gt;Caneca - R$ 25,00&lt;/li&gt;<br>  &lt;li&gt;Camiseta - R$ 59,90&lt;/li&gt;<br>&lt;/ul&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Crie a rota <code>/produtos/{id}</code> com um método <code>show($id)</code> que mostra um produto só.</div>
+<script type="text/x-code">
+<?php
+// app/Models/Produto.php
+class Produto {
+  public function __construct(public string $nome, public float $preco) {}
+}
+
+// resources/views/produtos/index.php
+criar_view("produtos.index", <<<'HTML'
+<h1>Produtos</h1>
+<ul>
+<?php foreach ($produtos as $p): ?>
+  <li>complete aqui</li>
+<?php endforeach; ?>
+</ul>
+HTML);
+
+// app/Http/Controllers/ProdutoController.php
+// crie o controller aqui (Caneca 25 e Camiseta 59.9)
+
+// routes/web.php
+// registre a rota /produtos aqui
+
+visitar("/produtos");
+</script>
+</section>
+
+</div>
+
+<!-- Mini-Laravel: carregado antes do código nos exemplos com data-kit="laravel" (cópia de php-02-classes-objetos/mini-laravel.php) -->
+<script type="text/x-kit" id="kit-laravel">
+<?php
+// MINI-LARAVEL DO PLAYGROUND
+// Uma versão de brinquedo (bem pequena) do que o Laravel faz quando chega um pedido.
+// No site ele já vem carregado (como o dd); no computador: require "mini-laravel.php";
+//   Route::get($url, $acao)      registra uma rota (como em routes/web.php)
+//   criar_view($nome, $html)     faz o papel de um arquivo em resources/views
+//   view($nome, $dados)          monta o HTML da view com os dados
+//   visitar($url)                simula o navegador pedindo uma URL
+namespace App\Http\Controllers {
+  // no Laravel: app/Http/Controllers/Controller.php
+  abstract class Controller {}
+}
+
+namespace {
+  class_alias(App\Http\Controllers\Controller::class, 'Controller');
+
+  class Route {
+    private static array $rotas = [];
+
+    public static function get(string $url, array|Closure $acao): void {
+      self::$rotas[$url] = $acao;
+    }
+
+    public static function despachar(string $url): string {
+      foreach (self::$rotas as $padrao => $acao) {
+        // "/cursos/{id}" vira a expressão #^/cursos/([^/]+)$#
+        $regex = '#^' . preg_replace('#\{\w+\}#', '([^/]+)', $padrao) . '$#';
+        if (preg_match($regex, $url, $partes)) {
+          array_shift($partes);   // sobram só os pedaços da URL: os {parâmetros}
+          if (is_array($acao)) {
+            [$classe, $metodo] = $acao;
+            $acao = [new $classe(), $metodo];
+          }
+          return (string) $acao(...$partes);
+        }
+      }
+      return "404 | Página não encontrada";
+    }
+  }
+
+  class View {
+    public static array $arquivos = [];
+  }
+
+  function criar_view(string $nome, string $html): void {
+    View::$arquivos[$nome] = $html;
+  }
+
+  function view(string $__view, array $__dados = []): string {
+    if (!isset(View::$arquivos[$__view])) {
+      return "Erro: a view \"$__view\" não existe (crie com criar_view)";
+    }
+    extract($__dados);   // cada chave do array vira uma variável dentro da view
+    ob_start();
+    eval('?>' . View::$arquivos[$__view]);
+    return ob_get_clean();
+  }
+
+  function visitar(string $url): void {
+    echo Route::despachar($url), "\n";
+  }
+}
+</script>
+
+<script>
+(function(){
+  // ---------- Carrega exemplos ----------
+  const exs = [...document.querySelectorAll('#examples .ex')].map(s => ({
+    group: s.dataset.group, title: s.dataset.title,
+    desc: s.querySelector('.desc').innerHTML,
+    tryit: s.querySelector('.try') ? s.querySelector('.try').innerHTML : '',
+    expect: s.dataset.expect ? JSON.parse(s.dataset.expect) : null,
+    kit: s.dataset.kit ? document.getElementById('kit-' + s.dataset.kit).textContent.trim() : '',
+    code: s.querySelector('script').textContent.replace(/^\n/, '').replace(/\s+$/, '') + '\n'
+  }));
+  const edits = exs.map(e => e.code);
+  let cur = 0;
+  const $ = id => document.getElementById(id);
+  const code = $('code'), hl = $('hl'), out = $('out'), status = $('status');
+
+  // ---------- Menu ----------
+  const nav = $('nav'), mnav = $('mnav'); let lastG = null;
+  exs.forEach((e, i) => {
+    if (e.group !== lastG) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = e.group; nav.appendChild(g); lastG = e.group; }
+    const b = document.createElement('button'); b.className = 'nav';
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span>`;
+    b.appendChild(document.createTextNode(e.title)); b.onclick = () => show(i); nav.appendChild(b);
+    const o = document.createElement('option'); o.value = i; o.textContent = `${String(i + 1).padStart(2, '0')} · ${e.group} · ${e.title}`; mnav.appendChild(o);
+  });
+  mnav.onchange = () => show(+mnav.value);
+
+  // ---------- Destaque de sintaxe (PHP) ----------
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const re = /(\/\/[^\n]*|#[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?)|(<\?php|\?>)|(\$[A-Za-z_]\w*)|\b(echo|print|if|elseif|else|while|do|for|foreach|as|switch|case|break|default|return|function|fn|new|class|public|private|protected|static|null|true|false|and|or|not|array|int|float|string|bool|void|match|continue|use|namespace|require|include|try|catch|throw|extends|implements|isset|empty|unset|list|const|self|parent|abstract|readonly|interface|instanceof|Closure)\b|\b(\d+(?:\.\d+)?)\b/g;
+  function highlight(src){
+    let h = '', last = 0, m; re.lastIndex = 0;
+    while ((m = re.exec(src))) {
+      h += esc(src.slice(last, m.index));
+      const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : m[4] ? 'v' : m[5] ? 'k' : 'd';
+      h += `<span class="${cls}">${esc(m[0])}</span>`;
+      last = re.lastIndex;
+    }
+    return h + esc(src.slice(last)) + '\n';
+  }
+  function paint(){ hl.innerHTML = highlight(code.value); hl.scrollTop = code.scrollTop; hl.scrollLeft = code.scrollLeft; }
+  code.addEventListener('input', () => { edits[cur] = code.value; paint(); });
+  code.addEventListener('scroll', () => { hl.scrollTop = code.scrollTop; hl.scrollLeft = code.scrollLeft; });
+  code.addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); code.setRangeText('  ', code.selectionStart, code.selectionEnd, 'end'); code.dispatchEvent(new Event('input')); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); }
+  });
+
+  // ---------- Mostrar exemplo ----------
+  function show(i){
+    cur = Math.max(0, Math.min(exs.length - 1, i)); const e = exs[cur];
+    $('grp').textContent = e.group; $('title').textContent = e.title; $('desc').innerHTML = e.desc; $('try').innerHTML = e.tryit;
+    code.value = edits[cur]; code.scrollTop = 0; paint();
+    [...nav.querySelectorAll('.nav')].forEach((b, j) => b.classList.toggle('on', j === cur));
+    mnav.value = cur; $('pos').textContent = `${cur + 1} de ${exs.length}`;
+    $('prev').disabled = cur === 0; $('next').disabled = cur === exs.length - 1;
+    clearOut(); try { history.replaceState(null, '', '#' + (cur + 1)); } catch(_){}
+  }
+
+  // ---------- Saída ----------
+  const MAX_LINES = 300; let lines = 0, hidden = 0, got = [], raw = '';
+  const pageBtn = $('aspage'), pageFrame = $('pageframe'); let asPage = false;
+  function setView(p){ asPage = p; out.hidden = p; pageFrame.hidden = !p; pageBtn.textContent = p ? '≡ ver como texto' : '🌐 ver como página'; if (p) pageFrame.srcdoc = raw; }
+  pageBtn.onclick = () => setView(!asPage);
+  function clearOut(){ out.innerHTML = '<div class="empty">Clique em ▶ Executar para ver o resultado aqui.</div>'; status.textContent = ''; status.className = 'status'; lines = 0; hidden = 0; got = []; raw = ''; if (asPage) setView(false); }
+  function addLine(text, cls){
+    if (lines === 0) out.innerHTML = '';
+    if (!cls) got.push(String(text).trim());
+    if (lines >= MAX_LINES && !cls) { hidden++; return; }
+    lines++;
+    const d = document.createElement('div'); d.className = 'ln' + (cls ? ' ' + cls : '');
+    if (cls !== 'tip' && cls !== 'win') { const n = document.createElement('span'); n.className = 'i'; n.textContent = cls === 'err' ? '!' : lines; d.appendChild(n); }
+    const t = document.createElement('span'); t.textContent = text; d.appendChild(t);
+    out.appendChild(d); out.scrollTop = out.scrollHeight;
+  }
+  function dica(msg){
+    if (/unexpected end of file/.test(msg)) return 'Dica: o PHP chegou ao fim do arquivo esperando algo. Faltou fechar uma chave } ou uma aspa.';
+    if (/expecting "?;"?/.test(msg) || /unexpected .* expecting/.test(msg)) return 'Dica: erro de digitação perto dessa linha. Em PHP toda instrução termina com ; e as variáveis começam com $.';
+    if (/syntax error/.test(msg)) return 'Dica: erro de sintaxe. Confira parênteses ( ), chaves { }, aspas e o ; no fim da linha anterior.';
+    if (/Undefined variable/.test(msg)) return 'Dica: essa variável não existe (ou está escrita diferente). Em PHP toda variável começa com $ e maiúsculas contam.';
+    if (/Call to undefined function/.test(msg)) return 'Dica: essa função não existe. Confira o nome (ex.: strlen, count, strtoupper) ou declare a função antes de chamar.';
+    if (/Undefined array key/.test(msg)) return 'Dica: essa chave não existe no array. Confira o nome da chave (ou o índice: começa em 0).';
+    if (/Division by zero/.test(msg)) return 'Dica: divisão por zero. Confira o divisor (um array vazio tem count 0).';
+    if (/Cannot redeclare/.test(msg)) return 'Dica: a função foi declarada duas vezes. Deixe só uma function com esse nome.';
+    if (/Unsupported operand types|must be of type/.test(msg)) return 'Dica: tipo errado. Confira se o valor é número ou texto; para juntar textos use o ponto (.), não o +.';
+    if (/Too few arguments/.test(msg)) return 'Dica: a função foi chamada com menos argumentos do que pede.';
+    if (/Array to string conversion/.test(msg)) return 'Dica: você tentou mostrar um array inteiro com echo. Use foreach, implode ou print_r.';
+    if (/Class ".*" not found/.test(msg)) return 'Dica: essa classe não existe. Confira o nome (maiúsculas contam), se ela foi declarada e, com namespace, se faltou o use.';
+    if (/Call to undefined method/.test(msg)) return 'Dica: esse método não existe na classe. Confira o nome e se ele está dentro das chaves { } da classe.';
+    if (/Cannot (access|modify) private/.test(msg) || /Call to private method/.test(msg)) return 'Dica: isso é private: só pode ser usado de dentro da classe. Use um método public para acessar.';
+    if (/must not be accessed before initialization/.test(msg)) return 'Dica: essa propriedade ainda não recebeu valor. Preencha antes de usar (ou use um construtor).';
+    if (/Cannot declare class|Cannot redeclare class/.test(msg)) return 'Dica: a classe foi declarada duas vezes. Deixe só uma class com esse nome.';
+    if (/Using \$this when not in object context/.test(msg)) return 'Dica: $this só existe dentro de um método chamado por um objeto (não em métodos static).';
+    if (/Object of class .* could not be converted to string/.test(msg)) return 'Dica: você tentou dar echo num objeto inteiro. Mostre uma propriedade ($obj->nome) ou use dump($obj).';
+    if (/Undefined property/.test(msg)) return 'Dica: essa propriedade não existe no objeto. Confira o nome (sem $ depois da setinha: $obj->nome).';
+    return '';
+  }
+
+  // ---------- Execução no Worker com PHP (php-wasm) ----------
+  let worker = null, ready = false, timer = null, t0 = 0, runId = 0, pendingRun = null;
+  const runBtn = $('run');
+  function boot(quiet){
+    ready = false; runBtn.disabled = true; runBtn.textContent = '⏳ Carregando PHP…';
+    if (!quiet) { status.className = 'status'; status.textContent = 'Carregando o PHP no navegador (12 MB, só na primeira vez)…'; }
+    worker = new Worker('/php/runner.js', { type: 'module' });
+    worker.onmessage = ({ data }) => {
+      if (data.ready) { ready = true; runBtn.disabled = false; runBtn.textContent = '▶ Executar'; if (!lines && !/✓|✗/.test(status.textContent)) status.textContent = 'PHP ' + (data.version || '') + ' pronto.'; if (pendingRun) { const s = pendingRun; pendingRun = null; exec(s); } return; }
+      if (data.id !== runId || !timer) return;
+      clearTimeout(timer); timer = null;
+      let hadErr = false;
+      raw = data.out.filter(([t]) => t === 'out').map(([, x]) => x).join('');
+      for (const [t, text] of data.out) for (const ln of text.replace(/\n$/, '').split('\n')) {
+        if (!ln.trim()) continue;
+        const isErr = t === 'err' || /^(PHP )?(Fatal error|Parse error|Warning|Notice|Deprecated)\b/.test(ln);
+        addLine(ln, isErr ? 'err' : undefined);
+        if (isErr) { hadErr = true; const d = dica(ln); if (d) addLine(d, 'tip'); }
+      }
+      if (data.fatal) { addLine(data.fatal, 'err'); hadErr = true; }
+      finish(!hadErr, hadErr ? '✗ O código tem um erro' : `✓ Executado em ${Math.round(performance.now() - t0)} ms`);
+    };
+    worker.onerror = ev => { ev.preventDefault(); status.className = 'status bad'; status.textContent = 'Não consegui carregar o PHP: ' + (ev.message || 'erro'); };
+  }
+  function finish(ok, msg){
+    timer = null;
+    if (hidden) addLine(`… mais ${hidden} linha(s) não mostrada(s)`, 'tip');
+    if (lines === 0 && ok) out.innerHTML = '<div class="empty">(O código rodou, mas não mostrou nada. Faltou um echo?)</div>';
+    const exp = exs[cur].expect;
+    if (ok && exp) {
+      let k = 0; for (const g of got) { if (k < exp.length && g === exp[k]) k++; }
+      if (k === exp.length) { addLine('🎉 Correto! A saída bate com a esperada. Agora faça o "teste também" lá em cima.', 'win'); msg = '✓ Exercício resolvido!'; }
+      else if (got.length === 0) { addLine('Nada apareceu na saída. Em PHP, o que aparece é o que você manda com echo.', 'tip'); ok = false; msg = '✗ Nada foi mostrado: faltou um echo?'; }
+      else { addLine('Ainda não bateu. Compare com a "Saída esperada" lá em cima: cada letra, espaço e acento conta. Esperado: ' + exp.slice(0, 4).join(' | ') + (exp.length > 4 ? ' …' : ''), 'tip'); ok = false; msg = '✗ Ainda não: confira a saída esperada'; }
+    }
+    status.className = 'status ' + (ok ? 'ok' : 'bad'); status.textContent = msg;
+    if (asPage) pageFrame.srcdoc = raw;
+  }
+  function exec(src){
+    runId++; const id = runId; t0 = performance.now();
+    timer = setTimeout(() => {
+      addLine('⏱ Execução interrompida depois de 3 segundos: parece um loop infinito! A condição do while nunca ficou false.', 'tip');
+      finish(false, '✗ Loop infinito interrompido'); worker.terminate(); boot(true);
+    }, 3000);
+    worker.postMessage({ id, code: src, kit: exs[cur].kit });
+  }
+  function run(){
+    clearOut(); out.innerHTML = ''; lines = 0;
+    status.className = 'status'; status.textContent = 'Executando…';
+    const src = code.value;
+    if (!/^\s*<\?php/.test(src)) addLine('Dica: todo arquivo PHP começa com <?php. Sem ele, o PHP devolve o texto do jeito que está.', 'tip');
+    if (!ready) { pendingRun = src; status.textContent = 'Esperando o PHP carregar…'; return; }
+    exec(src);
+  }
+  boot();
+
+  // ---------- Botões ----------
+  runBtn.onclick = run; $('clear').onclick = clearOut;
+  $('reset').onclick = () => { edits[cur] = exs[cur].code; code.value = edits[cur]; paint(); clearOut(); };
+  $('prev').onclick = () => show(cur - 1); $('next').onclick = () => show(cur + 1);
+  const root = document.documentElement; const defFs = window.innerWidth < 1000 ? 16 : 22;
+  let fs = defFs; try { fs = +localStorage.getItem('pg-fs') || defFs; } catch(_){}
+  const setFs = v => { fs = Math.max(14, Math.min(40, v)); root.style.setProperty('--fs', fs + 'px'); try { localStorage.setItem('pg-fs', fs); } catch(_){} };
+  setFs(fs); $('bigger').onclick = () => setFs(fs + 2); $('smaller').onclick = () => setFs(fs - 2);
+  document.addEventListener('keydown', e => { if (document.activeElement === code) return; if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
+  const start = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>

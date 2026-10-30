@@ -9,7 +9,7 @@ Material do curso de programação básica da **Greenn School** (aulas aos sába
 | `site-alunos/` | O site publicado na Vercel: home por módulos (HTML, CSS, JavaScript, Laravel), um playground por aula com exemplos ao vivo e exercícios com correção automática, apostilas em PDF e os projetos finais de cada módulo (portfólio do aluno) |
 | `html-0N-*/`, `css-0N-*/` | Pasta de cada aula de HTML e CSS: README (plano), gabarito e apostila |
 | `aula-0N-*/`, `aula-bonus-*/` | Pasta de cada aula de JavaScript: README, exemplos, exercícios, gabarito e apostila |
-| `php-01-basico/` | Primeira aula do módulo Laravel (PHP rodando no navegador via php-wasm) |
+| `php-0N-*/` | Pasta de cada aula do módulo Laravel (PHP rodando no navegador via php-wasm): README, exemplos, exercícios, gabarito e apostila |
 | `projeto-portfolio/` | Roteiros em PDF, checklist e gabarito do projeto final (o portfólio que evolui a cada módulo) |
 
 ## Como publicar o site
