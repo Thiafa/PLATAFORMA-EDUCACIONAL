@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laravel 3 · Rotas e views com Blade — Greenn School</title>
+<style>
+  :root{
+    --bg:#15171E; --panel:#1F2330; --panel2:#262B3A; --line:#323849;
+    --ink:#EDEAE0; --muted:#9AA0AE; --acc:#F0C23B; --ok:#7FD18B; --err:#FF7A7A;
+    --str:#A8D5A2; --kw:#F0C23B; --num:#F4A77A; --com:#7E879B; --bool:#8FC7FF;
+    --fs:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .app{display:grid;grid-template-columns:290px 1fr;height:100vh}
+  /* Sidebar */
+  aside{background:#11131A;border-right:1px solid var(--line);overflow-y:auto;padding:24px 0}
+  .brand{padding:0 24px 20px;border-bottom:1px solid var(--line);margin-bottom:12px}
+  .brand .num{font-family:"JetBrains Mono",Consolas,monospace;color:var(--acc);font-size:40px;font-weight:700;line-height:1}
+  .brand .t{font-size:20px;font-weight:600;margin-top:8px}
+  .brand .s{font-size:14px;color:var(--muted);margin-top:4px}
+  .grp{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:16px 24px 6px}
+  .nav{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:inherit;font-size:16px;padding:9px 24px;cursor:pointer;border-left:3px solid transparent}
+  .nav:hover{background:#1A1D26}
+  .nav.on{background:#1F2330;border-left-color:var(--acc);color:var(--acc);font-weight:600}
+  .nav .n{font-family:Consolas,monospace;color:var(--muted);margin-right:8px;font-size:14px}
+  /* Main */
+  main{display:flex;flex-direction:column;min-width:0;padding:28px 36px;gap:18px;overflow:hidden}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+  .eyebrow{display:inline-block;background:var(--acc);color:var(--bg);font-weight:700;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:6px}
+  h1{margin:10px 0 6px;font-size:calc(var(--fs) * 1.6);line-height:1.15}
+  .desc{color:#C4C8D2;font-size:calc(var(--fs) * .82);line-height:1.5;max-width:1100px}
+  .desc code,.try code{font-family:"JetBrains Mono",Consolas,monospace;background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--acc)}
+  .try{margin-top:10px;font-size:calc(var(--fs) * .72);color:var(--muted)}
+  .try b{color:var(--ink)}
+  .tools{display:flex;gap:8px;flex-shrink:0}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:var(--muted)}
+  .btn.run{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:700;font-size:17px;padding:12px 22px}
+  .btn.run:hover{filter:brightness(1.08)}
+  .work{flex:1;display:grid;grid-template-columns:1.25fr 1fr;gap:18px;min-height:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .card .hd{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+  .card .hd .dots{display:flex;gap:6px}
+  .card .hd .dots i{width:10px;height:10px;border-radius:50%;background:#3A4052;display:block}
+  .hint{text-transform:none;letter-spacing:0;font-size:13px}
+  /* Editor (textarea sobre pre com cores) */
+  .editor{position:relative;flex:1;min-height:0}
+  .editor pre,.editor textarea{position:absolute;inset:0;margin:0;padding:18px 20px;font-family:"JetBrains Mono","Fira Code",Consolas,"Courier New",monospace;font-size:var(--fs);line-height:1.55;white-space:pre;overflow:auto;tab-size:2;border:0}
+  .editor pre{color:#E6E8EE;pointer-events:none}
+  .editor textarea{background:transparent;color:transparent;caret-color:var(--acc);resize:none;outline:none}
+  .editor textarea::selection{background:rgba(240,194,59,.28);color:transparent}
+  .k{color:var(--kw)} .s{color:var(--str)} .c{color:var(--com);font-style:italic} .d{color:var(--num)} .b{color:var(--bool)}
+  /* Saída */
+  .out{flex:1;overflow:auto;padding:14px 0;font-family:"JetBrains Mono",Consolas,monospace;font-size:var(--fs);line-height:1.5}
+  .out .ln{display:flex;gap:14px;padding:3px 20px;border-bottom:1px solid #262A37;animation:in .18s ease-out both}
+  .out .ln .i{color:#555C6E;min-width:2ch;text-align:right;user-select:none}
+  .out .ln.err{color:var(--err);background:rgba(255,122,122,.07)}
+  .out .ln.tip{color:var(--acc);font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  .out .empty{color:#5C6376;padding:6px 20px;font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  .status{padding:10px 16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);min-height:40px}
+  .status.ok{color:var(--ok)} .status.bad{color:var(--err)}
+  @keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .foot{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:14px}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px;color:var(--ink)}
+  .task{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+  .task .obj{margin:0}
+  .task-cols{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;align-items:start}
+  .lbl{margin:0 0 6px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);font-weight:700}
+  .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+  .expbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+  .expbox pre{margin:0;font-family:"JetBrains Mono",Consolas,monospace;font-size:calc(var(--fs) * .72);color:var(--ok);white-space:pre-wrap;max-height:180px;overflow:auto}
+  .out .ln.win{color:var(--ok);background:rgba(127,209,139,.08);font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  @media (max-width:1000px){.task-cols{grid-template-columns:1fr}}
+  #mnav{display:none}
+  @media (max-width:1000px){
+    #mnav{display:block;width:100%;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:16px;margin-bottom:6px}
+    .hint{display:none}
+    .tools{flex-wrap:wrap}
+    .app{grid-template-columns:1fr;height:auto}
+    aside{display:none}
+    main{padding:18px 16px;overflow:visible}
+    .work{grid-template-columns:1fr}
+    .editor{min-height:320px}.out{min-height:200px}
+    .top{flex-direction:column}
+  }
+
+  :root{--acc:#F43F5E}
+  .nav.on{color:#FDA4AF}
+  .v{color:#7DD3FC}
+  .desc code,.try code{color:#FDA4AF}
+  .btn.run{background:#F43F5E;border-color:#F43F5E;color:#fff}
+  .btn.run:disabled{opacity:.6;cursor:wait}
+  .eyebrow{background:#F43F5E;color:#fff}
+  .expbox pre{color:var(--ok)}
+  .lbl{color:#FDA4AF}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <div class="num" style="color:#F43F5E">L3</div>
+      <div class="t">Laravel: rotas e views com Blade</div>
+      <div class="s">parâmetros, rotas nomeadas, layouts, partials e componentes</div><a href="/php-03/apostila-php-03.pdf" target="_blank" style="display:inline-block;margin-top:12px;font-size:13px;color:#15171E;background:#F43F5E;font-weight:600;padding:6px 12px;border-radius:8px;text-decoration:none">⬇ Apostila em PDF</a><a href="/#laravel" style="display:block;margin-top:10px;font-size:13px;color:#9AA0AE">← todas as aulas</a>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+
+  <main>
+    <select id="mnav" aria-label="Escolher exemplo"></select>
+    <div class="top">
+      <div>
+        <span class="eyebrow" id="grp"></span>
+        <h1 id="title"></h1>
+        <div class="desc" id="desc"></div>
+        <div class="try" id="try"></div>
+      </div>
+      <div class="tools">
+        <button class="btn" id="smaller" title="Diminuir fonte">A−</button>
+        <button class="btn" id="bigger" title="Aumentar fonte (projetor)">A+</button>
+        <button class="btn" id="reset" title="Voltar ao código original">↺ Restaurar</button>
+        <button class="btn run" id="run">▶ Executar</button>
+      </div>
+    </div>
+
+    <div class="work">
+      <div class="card">
+        <div class="hd"><span class="dots"><i></i><i></i><i></i></span><span>script.php · pode editar</span><span class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> executa</span></div>
+        <div class="editor">
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código PHP e Blade"></textarea>
+        </div>
+      </div>
+      <div class="card">
+        <div class="hd"><span>Saída do PHP</span><span style="display:flex;gap:6px"><button class="btn" id="aspage" style="padding:4px 10px;font-size:12px;text-transform:none;letter-spacing:0">🌐 ver como página</button><button class="btn" id="clear" style="padding:4px 10px;font-size:12px">limpar</button></span></div>
+        <iframe id="pageframe" hidden style="flex:1;width:100%;border:0;background:#fff;min-height:0" title="Saída como página"></iframe><div class="out" id="out"><div class="empty">Clique em ▶ Executar para ver o resultado aqui.</div></div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <button class="btn" id="prev">← Anterior</button>
+      <span id="pos"></span>
+      <button class="btn" id="next">Próximo →</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== EXEMPLOS =====================
+  Para criar um novo exemplo, copie um bloco <section class="ex"> abaixo.
+  data-group = grupo no menu | data-title = título | .desc = explicação | .try = desafio
+====================================================== -->
+<div id="examples" hidden>
+<section class="ex" data-kit="laravel" data-group="Rotas" data-title="routes/web.php: três jeitos de responder">
+  <div class="desc">Na L2 você viu o caminho rota → controller → view num mini-Laravel. Agora o playground traz um mini-Laravel maior, com rotas e <b>Blade</b>, para você ver o que o Laravel faz de verdade. Tudo começa no <code>routes/web.php</code>, e uma rota pode responder de três jeitos: <b>①</b> uma <b>função</b> (bom para testar rápido); <b>②</b> um <b>controller</b> (o jeito do dia a dia); <b>③</b> <code>Route::view</code>, para uma página que só mostra uma view, sem lógica nenhuma. A view já está em Blade: <code>{{ $escola }}</code> faz o papel do <code>&lt;?= $escola ?&gt;</code> da L2.</div>
+  <div class="try"><b>Experimente:</b> crie <code>Route::view("/contato", "contato")</code> com uma view nova que mostra o e-mail da escola, e visite <code>/contato</code> de novo.</div>
+<script type="text/x-code">
+<?php
+// resources/views/sobre.blade.php
+criar_view("sobre", <<<'BLADE'
+<h1>Sobre a {{ $escola }}</h1>
+<p>Aulas aos sábados.</p>
+BLADE);
+
+// app/Http/Controllers/CursoController.php
+class CursoController extends Controller {
+  public function index(): string {
+    return "Lista de cursos (vinda do controller)";
+  }
+}
+
+// routes/web.php
+// ① uma função (closure)
+Route::get("/", function () {
+  return "Bem-vindo à Greenn School!";
+});
+
+// ② um controller
+Route::get("/cursos", [CursoController::class, "index"]);
+
+// ③ Route::view: a página só mostra uma view
+Route::view("/sobre", "sobre", ["escola" => "Greenn School"]);
+
+// o navegador
+visitar("/");
+visitar("/cursos");
+visitar("/sobre");
+visitar("/contato");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Rotas" data-title="Parâmetros: {id}, {nome?} e where">
+  <div class="desc">Um pedaço da URL entre chaves vira um <b>parâmetro</b> da função, na ordem em que aparece. Com <code>?</code> no fim (<code>{nome?}</code>), ele é <b>opcional</b>, e o parâmetro da função precisa de um valor padrão. Para aceitar só certos valores, use <code>-&gt;whereNumber("id")</code> (só números) ou <code>-&gt;where("slug", "[a-z-]+")</code> com uma expressão regular: se a URL não bater, a rota é ignorada e o resultado é <b>404</b>.</div>
+  <div class="try"><b>Experimente:</b> crie a rota <code>/tabuada/{n}</code>, só com números, que devolve <code>7 x 2 = 14</code> para <code>/tabuada/7</code>. Depois visite <code>/blog/Post_1</code> e explique o 404.</div>
+<script type="text/x-code">
+<?php
+// {id}: um pedaço da URL que chega como parâmetro
+Route::get("/cursos/{id}", function (string $id) {
+  return "Curso número $id";
+})->whereNumber("id");          // só aceita números
+
+// dois parâmetros: chegam na ordem da URL
+Route::get("/cursos/{curso}/aulas/{aula}", function (string $curso, string $aula) {
+  return "Curso $curso, aula $aula";
+});
+
+// {nome?}: opcional; precisa de um valor padrão
+Route::get("/ola/{nome?}", function (string $nome = "visitante") {
+  return "Olá, $nome!";
+});
+
+// where: só letras minúsculas e hífen
+Route::get("/blog/{slug}", function (string $slug) {
+  return "Post: $slug";
+})->where("slug", "[a-z-]+");
+
+visitar("/cursos/3");
+visitar("/cursos/abc");         // 404: não é número
+visitar("/cursos/2/aulas/5");
+visitar("/ola");
+visitar("/ola/Ana");
+visitar("/blog/primeiro-post");
+visitar("/blog/Post_1");        // 404
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Rotas" data-title="Rotas nomeadas e route()">
+  <div class="desc">Se você escreve <code>/cursos/3</code> em 20 links e um dia a URL muda para <code>/formacoes/3</code>, tem que caçar os 20. Por isso a gente dá um <b>nome</b> à rota com <code>-&gt;name("cursos.show")</code> e monta os links com <code>route("cursos.show", 3)</code>: mudou a URL, os links acompanham sozinhos. O costume é <code>assunto.ação</code>. <code>fn () =&gt; "Início"</code> é a forma curta de <code>function () { return "Início"; }</code> (a arrow function do JavaScript). No Laravel de verdade, <code>route()</code> devolve o endereço completo (<code>http://localhost:8000/cursos/3</code>); aqui, só o caminho.</div>
+  <div class="try"><b>Experimente:</b> mude a URL da rota <code>cursos.show</code> para <code>/formacoes/{id}</code> e execute: os links mudam sozinhos. Depois chame <code>route("cursos.editar")</code> e leia o erro.</div>
+<script type="text/x-code">
+<?php
+Route::get("/", fn () => "Início")->name("home");
+Route::get("/cursos", fn () => "Todos os cursos")->name("cursos.index");
+Route::get("/cursos/{id}", fn (string $id) => "Curso $id")->name("cursos.show");
+
+// route() monta a URL pelo nome da rota
+echo route("home"), "\n";
+echo route("cursos.index"), "\n";
+echo route("cursos.show", 3), "\n";
+echo route("cursos.show", ["id" => 7]), "\n";
+
+// o link sempre acompanha a rota
+$link = route("cursos.show", 3);
+echo "<a href=\"$link\">Ver curso</a>\n";
+
+visitar($link);
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Rotas" data-title="Grupos, redirect e abort(404)">
+  <div class="desc">Três ferramentas do dia a dia. <b>abort(404)</b>: o curso pedido não existe? Pare tudo e responda 404 (ou <code>abort(403)</code> para "acesso proibido"). <b>Route::redirect</b>: uma URL antiga manda para a nova (resposta 302). <b>Grupo</b>: <code>Route::prefix("admin")-&gt;name("admin.")-&gt;group(...)</code> coloca <code>/admin</code> na URL e <code>admin.</code> no nome de todas as rotas de dentro, sem repetir. O <code>use ($cursos)</code> deixa a função enxergar a variável de fora: em PHP, a função não enxerga sozinha.</div>
+  <div class="try"><b>Experimente:</b> crie dentro do grupo a rota <code>/admin/notas</code> com nome <code>admin.notas</code>. Depois faça <code>/cursos/2</code> responder <code>abort(403)</code>.</div>
+<script type="text/x-code">
+<?php
+$cursos = [1 => "HTML", 2 => "CSS", 3 => "Laravel"];
+
+// abort(404): o curso não existe? para tudo e responde 404
+Route::get("/cursos/{id}", function (string $id) use ($cursos) {
+  if (!isset($cursos[$id])) {
+    abort(404);
+  }
+  return "Curso: " . $cursos[$id];
+});
+
+// redirect: a URL antiga manda para a nova
+Route::redirect("/formacoes", "/cursos/1");
+
+// grupo: /admin na URL e admin. no nome
+Route::prefix("admin")->name("admin.")->group(function () {
+  Route::get("/painel", fn () => "Painel do professor")->name("painel");
+  Route::get("/alunos", fn () => "Gerenciar alunos")->name("alunos");
+});
+
+visitar("/cursos/3");
+visitar("/cursos/9");
+visitar("/formacoes");
+visitar("/admin/painel");
+echo route("admin.alunos"), "\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Blade" data-title="Blade: {{ }} no lugar do &lt;?= ?&gt;">
+  <div class="desc">As views do Laravel terminam em <code>.blade.php</code>: o <b>Blade</b> é o jeito do Laravel escrever HTML com buracos. <code>{{ $nome }}</code> faz o papel do <code>&lt;?= $nome ?&gt;</code>, com um bônus de segurança: ele <b>escapa</b> o HTML. Se alguém cadastra o nome <code>&lt;script&gt;</code>, o Blade troca <code>&lt;</code> por <code>&amp;lt;</code> e o código não roda (isso evita o ataque chamado <b>XSS</b>). Dentro das chaves vale qualquer expressão PHP. <code>{!! $bio !!}</code> mostra <b>sem escapar</b>: use só com HTML em que você confia. <code>{{-- … --}}</code> é comentário e não vai para o HTML.</div>
+  <div class="try"><b>Experimente:</b> troque a bio por <code>&lt;script&gt;alert("hackeado")&lt;/script&gt;</code> e clique em <b>🌐 ver como página</b>: compare a linha com <code>{{ }}</code> e a com <code>{!! !!}</code>.</div>
+<script type="text/x-code">
+<?php
+// resources/views/perfil.blade.php
+criar_view("perfil", <<<'BLADE'
+{{-- comentário do Blade: não vai para o HTML --}}
+<h1>Perfil de {{ $nome }}</h1>
+<p>Em maiúsculas: {{ strtoupper($nome) }}</p>
+<p>Média: {{ number_format($media, 1, ",") }}</p>
+<p>Situação: {{ $media >= 7 ? "aprovada" : "recuperação" }}</p>
+<p>Bio escapada: {{ $bio }}</p>
+<p>Bio sem escapar: {!! $bio !!}</p>
+BLADE);
+
+Route::get("/perfil", function () {
+  return view("perfil", [
+    "nome" => "Ana",
+    "media" => 8.75,
+    "bio" => "Gosto de <b>PHP</b>",
+  ]);
+});
+
+visitar("/perfil");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Blade" data-title="Condicionais: @if, @unless, @isset e @empty">
+  <div class="desc">No Blade, as estruturas de controle viram <b>diretivas</b> que começam com <code>@</code>. <code>@if</code> / <code>@elseif</code> / <code>@else</code> / <code>@endif</code> é o <code>if</code> de sempre, sem chaves. <code>@unless</code> é um "se <b>não</b>". <code>@isset($x)</code> só mostra se a variável existir, e <code>@empty($lista)</code> só mostra se ela estiver vazia. Toda diretiva que abre precisa fechar: <code>@if</code> → <code>@endif</code>.</div>
+  <div class="try"><b>Experimente:</b> mude a média para 6 e depois para 3. Passe também <code>"observacao" =&gt; "Ótima participação"</code> e veja o <code>@isset</code> aparecer.</div>
+<script type="text/x-code">
+<?php
+criar_view("boletim", <<<'BLADE'
+<h1>Boletim de {{ $aluno }}</h1>
+
+@if ($media >= 7)
+  <p>✅ Aprovado(a) com média {{ $media }}</p>
+@elseif ($media >= 5)
+  <p>⚠️ Recuperação</p>
+@else
+  <p>❌ Reprovado(a)</p>
+@endif
+
+@unless ($pagou)
+  <p>Mensalidade em aberto</p>
+@endunless
+
+@isset ($observacao)
+  <p>Obs.: {{ $observacao }}</p>
+@endisset
+
+@empty ($faltas)
+  <p>Nenhuma falta. Parabéns!</p>
+@endempty
+BLADE);
+
+Route::get("/boletim/{aluno}", function (string $aluno) {
+  return view("boletim", [
+    "aluno" => $aluno,
+    "media" => 8,
+    "pagou" => false,
+    "faltas" => [],
+  ]);
+});
+
+visitar("/boletim/Ana");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Blade" data-title="Laços: @foreach, @forelse e $loop">
+  <div class="desc"><code>@foreach ($cursos as $curso)</code> … <code>@endforeach</code> repete um pedaço do HTML. Dentro dele o Blade cria a variável <code>$loop</code>, que diz onde você está: <code>$loop-&gt;iteration</code> (1, 2, 3…), <code>$loop-&gt;index</code> (0, 1, 2…), <code>$loop-&gt;first</code> e <code>$loop-&gt;last</code> (true no primeiro e no último), <code>$loop-&gt;count</code> (total) e <code>$loop-&gt;remaining</code> (quantos faltam). E o <code>@forelse</code> é um foreach com plano B: o que estiver depois do <code>@empty</code> aparece quando a lista vem vazia.</div>
+  <div class="try"><b>Experimente:</b> coloque dois nomes na lista de alunos e veja o plano B sumir. Depois mostre <code>(faltam {{ $loop-&gt;remaining }})</code> em cada curso.</div>
+<script type="text/x-code">
+<?php
+criar_view("cursos.index", <<<'BLADE'
+<h1>Cursos ({{ count($cursos) }})</h1>
+<ol>
+@foreach ($cursos as $curso)
+  <li>{{ $loop->iteration }}. {{ $curso }}@if ($loop->first) ⭐ o primeiro!@elseif ($loop->last) 🏁 o último!@endif</li>
+@endforeach
+</ol>
+
+<h2>Matriculados</h2>
+<ul>
+@forelse ($alunos as $aluno)
+  <li>{{ $aluno }}</li>
+@empty
+  <li>Nenhum aluno ainda.</li>
+@endforelse
+</ul>
+BLADE);
+
+Route::get("/cursos", function () {
+  return view("cursos.index", [
+    "cursos" => ["HTML", "CSS", "JavaScript", "Laravel"],
+    "alunos" => [],
+  ]);
+});
+
+visitar("/cursos");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Blade" data-title="Layout: @extends, @section e @yield">
+  <div class="desc">Todas as páginas de um site têm o mesmo cabeçalho, menu e rodapé. Em vez de copiar, você escreve <b>um layout</b> (<code>resources/views/layouts/app.blade.php</code>) com buracos marcados por <code>@yield("conteudo")</code>. Cada página começa com <code>@extends("layouts.app")</code> e preenche os buracos com <code>@section("conteudo")</code> … <code>@endsection</code>. Para um texto curto, use a forma de uma linha: <code>@section("titulo", "Início")</code>. O segundo valor do <code>@yield</code> é o padrão, usado quando a página não preenche.</div>
+  <div class="try"><b>Experimente:</b> crie um terceiro buraco <code>@yield("rodape")</code> no layout e preencha só na home. Depois mude o texto do <code>&lt;header&gt;</code> no layout e veja as duas páginas mudarem.</div>
+<script type="text/x-code">
+<?php
+// resources/views/layouts/app.blade.php: o esqueleto de TODAS as páginas
+criar_view("layouts.app", <<<'BLADE'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <title>@yield("titulo", "Greenn School")</title>
+</head>
+<body>
+  <header>🌱 Greenn School</header>
+  <main>
+    @yield("conteudo")
+  </main>
+  <footer>Aulas aos sábados</footer>
+</body>
+</html>
+BLADE);
+
+// resources/views/home.blade.php: só o que muda
+criar_view("home", <<<'BLADE'
+@extends("layouts.app")
+
+@section("titulo", "Início")
+
+@section("conteudo")
+  <h1>Bem-vindo, {{ $nome }}!</h1>
+@endsection
+BLADE);
+
+// resources/views/sobre.blade.php
+criar_view("sobre", <<<'BLADE'
+@extends("layouts.app")
+
+@section("conteudo")
+  <h1>Sobre nós</h1>
+@endsection
+BLADE);
+
+Route::get("/", fn () => view("home", ["nome" => "Ana"]));
+Route::view("/sobre", "sobre");
+
+visitar("/");
+visitar("/sobre");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Blade" data-title="Pedaços reaproveitados: @include">
+  <div class="desc">O layout resolve o esqueleto. Para um <b>pedaço</b> que se repete em vários lugares (o menu, o card de um curso), crie um <b>partial</b> e coloque onde quiser com <code>@include("partials.menu")</code>. O partial enxerga as variáveis da view que o incluiu, e você pode mandar mais dados no segundo argumento: <code>@include("partials.card-curso", ["curso" =&gt; $c])</code>. Repare no menu: os links usam <code>route()</code> dentro de <code>{{ }}</code>.</div>
+  <div class="try"><b>Experimente:</b> adicione um quarto curso. Depois crie o partial <code>partials.rodape</code> e inclua no fim da página.</div>
+<script type="text/x-code">
+<?php
+// resources/views/partials/menu.blade.php
+criar_view("partials.menu", <<<'BLADE'
+<nav>
+  <a href="{{ route('home') }}">Início</a> |
+  <a href="{{ route('cursos.index') }}">Cursos</a>
+</nav>
+BLADE);
+
+// resources/views/partials/card-curso.blade.php
+criar_view("partials.card-curso", <<<'BLADE'
+<div class="card">
+  <h3>{{ $curso["nome"] }}</h3>
+  <p>{{ $curso["aulas"] }} aulas</p>
+</div>
+BLADE);
+
+// resources/views/cursos/index.blade.php
+criar_view("cursos.index", <<<'BLADE'
+@include("partials.menu")
+<h1>Cursos</h1>
+@foreach ($cursos as $c)
+  @include("partials.card-curso", ["curso" => $c])
+@endforeach
+BLADE);
+
+Route::get("/", fn () => "Início")->name("home");
+Route::get("/cursos", function () {
+  return view("cursos.index", ["cursos" => [
+    ["nome" => "HTML", "aulas" => 4],
+    ["nome" => "CSS", "aulas" => 4],
+    ["nome" => "Laravel", "aulas" => 6],
+  ]]);
+})->name("cursos.index");
+
+visitar("/cursos");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Blade" data-title="Componentes: &lt;x-alerta&gt;">
+  <div class="desc">Um <b>componente</b> é um partial que se usa como se fosse uma tag HTML. O arquivo <code>resources/views/components/alerta.blade.php</code> vira a tag <code>&lt;x-alerta&gt;</code>. O que vai entre a abertura e o fechamento chega na variável <code>$slot</code>; os atributos chegam como variáveis, e o <code>@props</code> define os valores padrão. Com dois-pontos (<code>:tipo="$nivel"</code>), o valor é uma expressão PHP, não um texto. É só uma introdução: os componentes voltam nos formulários (L5).</div>
+  <div class="try"><b>Experimente:</b> crie o componente <code>&lt;x-botao&gt;</code> que mostra <code>&lt;button class="botao"&gt;{{ $slot }}&lt;/button&gt;</code> e use no painel.</div>
+<script type="text/x-code">
+<?php
+// resources/views/components/alerta.blade.php
+criar_view("components.alerta", <<<'BLADE'
+@props(["tipo" => "info"])
+<div class="alerta {{ $tipo }}">{{ $slot }}</div>
+BLADE);
+
+criar_view("painel", <<<'BLADE'
+<style>
+  .alerta { padding: 10px; margin: 6px 0; border-radius: 6px; background: lightblue }
+  .sucesso { background: lightgreen }
+  .erro { background: pink }
+</style>
+<h1>Painel</h1>
+<x-alerta tipo="sucesso">Matrícula feita!</x-alerta>
+<x-alerta tipo="erro">Falta pagar a mensalidade.</x-alerta>
+<x-alerta>Aula sábado às 9h.</x-alerta>
+<x-alerta :tipo="$nivel">O tipo veio de uma <b>variável</b>.</x-alerta>
+BLADE);
+
+Route::get("/painel", fn () => view("painel", ["nivel" => "erro"]));
+
+visitar("/painel");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Por dentro" data-title="O Blade vira PHP">
+  <div class="desc">O Blade não é mágica: antes de rodar, o Laravel <b>compila</b> a view, ou seja, troca cada <code>{{ }}</code> e cada <code>@diretiva</code> por PHP comum, e guarda o resultado em <code>storage/framework/views</code> para não refazer a cada visita. Este exemplo mostra o PHP que sai de uma view. Repare: <code>{{ $x }}</code> vira <code>echo e($x)</code> (o <code>e()</code> é quem escapa), <code>{!! $x !!}</code> vira <code>echo $x</code>, e o <code>@foreach</code> ganha umas linhas a mais para preparar o <code>$loop</code>.</div>
+  <div class="try"><b>Experimente:</b> coloque um <code>@unless</code> e um <code>{{-- comentário --}}</code> na view e veja no que eles viram.</div>
+<script type="text/x-code">
+<?php
+$blade = <<<'BLADE'
+<h1>{{ $titulo }}</h1>
+@if (count($cursos) > 0)
+  <ul>
+  @foreach ($cursos as $curso)
+    <li>{{ $curso }}</li>
+  @endforeach
+  </ul>
+@else
+  <p>{!! $vazio !!}</p>
+@endif
+BLADE;
+
+echo compilar_blade($blade);
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Juntando tudo" data-title="Projeto da aula: o site da escola">
+  <div class="desc">Tudo junto, do jeito que fica num projeto Laravel: um <b>model</b> com os cursos (na L4 eles vêm do banco), um <b>controller</b> com <code>index</code> (a lista) e <code>show</code> (um curso, ou 404), <b>rotas nomeadas</b> com <code>whereNumber</code>, um <b>layout</b> e duas páginas que estendem o layout, com links feitos por <code>route()</code>. Clique em <b>🌐 ver como página</b>.</div>
+  <div class="try"><b>Experimente:</b> adicione o curso de JavaScript no model. Depois crie a página <code>/sobre</code> com <code>Route::view</code>, estendendo o mesmo layout, e coloque o link no menu.</div>
+<script type="text/x-code">
+<?php
+// app/Models/Curso.php  (na L4 os dados vêm do banco)
+class Curso {
+  public function __construct(public int $id, public string $nome, public int $aulas) {}
+
+  public static function all(): array {
+    return [
+      1 => new Curso(1, "HTML", 4),
+      2 => new Curso(2, "CSS", 4),
+      3 => new Curso(3, "Laravel", 6),
+    ];
+  }
+
+  public static function find(int $id): ?Curso {
+    return self::all()[$id] ?? null;
+  }
+}
+
+// app/Http/Controllers/CursoController.php
+class CursoController extends Controller {
+  public function index(): string {
+    return view("cursos.index", ["cursos" => Curso::all()]);
+  }
+
+  public function show(string $id): string {
+    $curso = Curso::find($id);
+    if (!$curso) {
+      abort(404);
+    }
+    return view("cursos.show", ["curso" => $curso]);
+  }
+}
+
+// resources/views/layouts/app.blade.php
+criar_view("layouts.app", <<<'BLADE'
+<style>body { font-family: sans-serif; margin: 24px }</style>
+<nav><a href="{{ route('cursos.index') }}">🌱 Cursos</a></nav>
+@yield("conteudo")
+BLADE);
+
+// resources/views/cursos/index.blade.php
+criar_view("cursos.index", <<<'BLADE'
+@extends("layouts.app")
+@section("conteudo")
+  <h1>Nossos cursos</h1>
+  <ul>
+  @foreach ($cursos as $curso)
+    <li><a href="{{ route('cursos.show', $curso->id) }}">{{ $curso->nome }}</a></li>
+  @endforeach
+  </ul>
+@endsection
+BLADE);
+
+// resources/views/cursos/show.blade.php
+criar_view("cursos.show", <<<'BLADE'
+@extends("layouts.app")
+@section("conteudo")
+  <h1>{{ $curso->nome }}</h1>
+  <p>{{ $curso->aulas }} aulas</p>
+@endsection
+BLADE);
+
+// routes/web.php
+Route::get("/cursos", [CursoController::class, "index"])->name("cursos.index");
+Route::get("/cursos/{id}", [CursoController::class, "show"])->whereNumber("id")->name("cursos.show");
+
+visitar("/cursos");
+visitar("/cursos/3");
+visitar("/cursos/9");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Livre" data-title="Área livre">
+  <div class="desc">Um script vazio para testar o que quiser. O mini-Laravel está carregado: <code>Route</code>, <code>route()</code>, <code>abort()</code>, <code>criar_view</code>, <code>view()</code>, o Blade inteiro, <code>compilar_blade()</code> e o <code>dd</code>.</div>
+  <div class="try"><b>Dica:</b> use <code>dd($variavel)</code> dentro de uma rota para espiar o que chegou.</div>
+<script type="text/x-code">
+<?php
+criar_view("teste", <<<'BLADE'
+<h1>Olá, {{ $nome }}!</h1>
+BLADE);
+
+Route::get("/teste/{nome}", fn (string $nome) => view("teste", ["nome" => $nome]));
+
+visitar("/teste/mundo");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 01 · Rotas com parâmetro" data-expect='[&quot;Perfil de Ana&quot;, &quot;O dobro de 21 é 42&quot;, &quot;404 | Página não encontrada&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Receber pedaços da URL como parâmetros e restringir com whereNumber.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie a rota <code>/alunos/{nome}</code>, que devolve <code>Perfil de Ana</code> para <code>/alunos/Ana</code>.</li><li>Crie a rota <code>/dobro/{n}</code>, que devolve <code>O dobro de 21 é 42</code>.</li><li>Use <code>-&gt;whereNumber("n")</code> na segunda, para <code>/dobro/abc</code> dar 404.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Perfil de Ana<br>O dobro de 21 é 42<br>404 | Página não encontrada</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Crie <code>/soma/{a}/{b}</code>, que devolve <code>2 + 3 = 5</code>.</div>
+<script type="text/x-code">
+<?php
+// routes/web.php
+// crie as duas rotas aqui
+
+// o navegador (não precisa mexer)
+visitar("/alunos/Ana");
+visitar("/dobro/21");
+visitar("/dobro/abc");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 02 · Parâmetro opcional e rota nomeada" data-expect='[&quot;Olá, visitante!&quot;, &quot;Olá, Bia!&quot;, &quot;Link: /ola/Bia&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar um parâmetro opcional e montar a URL pelo nome da rota.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie a rota <code>/ola/{nome?}</code> que devolve <code>Olá, Bia!</code>. Sem nome, ela deve dizer <code>Olá, visitante!</code>.</li><li>Dê a ela o nome <code>ola</code> com <code>-&gt;name()</code>.</li><li>Complete o <code>echo</code> usando <code>route("ola", "Bia")</code>, sem escrever a URL à mão.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Olá, visitante!<br>Olá, Bia!<br>Link: /ola/Bia</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Mude a URL da rota para <code>/oi/{nome?}</code>: o link muda sozinho e o <code>visitar("/ola/Bia")</code> passa a dar 404.</div>
+<script type="text/x-code">
+<?php
+// routes/web.php
+// crie a rota aqui
+
+visitar("/ola");
+visitar("/ola/Bia");
+echo "Link: " . "complete com route()" . "\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 03 · {{ }} ou {!! !!}?" data-expect='[&quot;&lt;p&gt;Aluno: &amp;lt;b&amp;gt;Hacker&amp;lt;/b&amp;gt;&lt;/p&gt;&quot;, &quot;&lt;p&gt;Destaque: &lt;strong&gt;novo&lt;/strong&gt;&lt;/p&gt;&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Entender o escape do Blade e corrigir uma view insegura.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li><b>Antes de executar</b>, escreva num papel o que você acha que cada linha mostra.</li><li>Execute. O nome vem do cadastro do aluno (qualquer um digita), mas a view mostra o nome <b>sem escapar</b>. O destaque vem do sistema (é confiável), mas aparece escapado.</li><li>Corrija a view: escape o nome e mostre o destaque como HTML.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;p&gt;Aluno: &amp;lt;b&amp;gt;Hacker&amp;lt;/b&amp;gt;&lt;/p&gt;<br>&lt;p&gt;Destaque: &lt;strong&gt;novo&lt;/strong&gt;&lt;/p&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Clique em <b>🌐 ver como página</b> antes e depois da correção. Em qual versão o nome aparece em negrito?</div>
+<script type="text/x-code">
+<?php
+// resources/views/aluno.blade.php
+criar_view("aluno", <<<'BLADE'
+<p>Aluno: {!! $nome !!}</p>
+<p>Destaque: {{ $destaque }}</p>
+BLADE);
+
+Route::get("/aluno", function () {
+  return view("aluno", [
+    "nome" => "<b>Hacker</b>",           // digitado pelo aluno
+    "destaque" => "<strong>novo</strong>", // escrito pelo sistema
+  ]);
+});
+
+visitar("/aluno");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 04 · @if no boletim" data-expect='[&quot;&lt;p&gt;Ana: aprovado(a)&lt;/p&gt;&quot;, &quot;&lt;p&gt;Caio: recuperação&lt;/p&gt;&quot;, &quot;&lt;p&gt;Bia: reprovado(a)&lt;/p&gt;&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Escolher o que mostrar com @if, @elseif e @else.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Na view <code>boletim</code>, mostre <code>&lt;p&gt;Ana: aprovado(a)&lt;/p&gt;</code> se a média for 7 ou mais.</li><li>Use <code>@elseif</code> para a média de 5 até 7 (<code>recuperação</code>) e <code>@else</code> para o resto (<code>reprovado(a)</code>).</li><li>A rota e as visitas já estão prontas.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;p&gt;Ana: aprovado(a)&lt;/p&gt;<br>&lt;p&gt;Caio: recuperação&lt;/p&gt;<br>&lt;p&gt;Bia: reprovado(a)&lt;/p&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Use <code>@unless</code> para mostrar <code>&lt;p&gt;Precisa estudar mais!&lt;/p&gt;</code> quando a média <b>não</b> for 7 ou mais.</div>
+<script type="text/x-code">
+<?php
+// resources/views/boletim.blade.php
+criar_view("boletim", <<<'BLADE'
+{{-- use @if, @elseif, @else e @endif --}}
+<p>{{ $nome }}: complete aqui</p>
+BLADE);
+
+Route::get("/boletim/{nome}/{media}", function (string $nome, string $media) {
+  return view("boletim", ["nome" => $nome, "media" => $media]);
+});
+
+visitar("/boletim/Ana/9");
+visitar("/boletim/Caio/6");
+visitar("/boletim/Bia/3");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 05 · @forelse da turma" data-expect='[&quot;&lt;h1&gt;Turma da manha&lt;/h1&gt;&quot;, &quot;&lt;li&gt;Ana&lt;/li&gt;&quot;, &quot;&lt;li&gt;Caio&lt;/li&gt;&quot;, &quot;&lt;h1&gt;Turma da noite&lt;/h1&gt;&quot;, &quot;&lt;li&gt;Nenhum aluno matriculado&lt;/li&gt;&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Percorrer uma lista com @forelse e tratar a lista vazia.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Na view <code>turma</code>, use <code>@forelse ($alunos as $aluno)</code> para gerar um <code>&lt;li&gt;</code> por aluno.</li><li>No <code>@empty</code>, mostre <code>&lt;li&gt;Nenhum aluno matriculado&lt;/li&gt;</code>.</li><li>A turma da manhã tem dois alunos; a da noite está vazia.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;h1&gt;Turma da manha&lt;/h1&gt;<br>&lt;ul&gt;<br>&nbsp; &lt;li&gt;Ana&lt;/li&gt;<br>&nbsp; &lt;li&gt;Caio&lt;/li&gt;<br>&lt;/ul&gt;<br>&lt;h1&gt;Turma da noite&lt;/h1&gt;<br>&lt;ul&gt;<br>&nbsp; &lt;li&gt;Nenhum aluno matriculado&lt;/li&gt;<br>&lt;/ul&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Mostre <code>&lt;p&gt;2 alunos&lt;/p&gt;</code> depois da lista, usando <code>count($alunos)</code> e <code>@if</code> para não aparecer na turma vazia.</div>
+<script type="text/x-code">
+<?php
+// resources/views/turma.blade.php
+criar_view("turma", <<<'BLADE'
+<h1>Turma da {{ $turno }}</h1>
+<ul>
+  {{-- crie o @forelse aqui --}}
+</ul>
+BLADE);
+
+Route::get("/turmas/{turno}", function (string $turno) {
+  $turmas = [
+    "manha" => ["Ana", "Caio"],
+    "noite" => [],
+  ];
+  return view("turma", ["turno" => $turno, "alunos" => $turmas[$turno]]);
+});
+
+visitar("/turmas/manha");
+visitar("/turmas/noite");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 06 · Ranking com $loop" data-expect='[&quot;&lt;li&gt;1º Ana&lt;/li&gt;&quot;, &quot;&lt;p&gt;🏆 Primeiro lugar!&lt;/p&gt;&quot;, &quot;&lt;li&gt;2º Caio&lt;/li&gt;&quot;, &quot;&lt;li&gt;3º Bia&lt;/li&gt;&quot;, &quot;&lt;p&gt;Fim do ranking: 3 alunos&lt;/p&gt;&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Usar a variável $loop dentro do @foreach.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Numere cada aluno com <code>$loop-&gt;iteration</code>: <code>&lt;li&gt;1º Ana&lt;/li&gt;</code>.</li><li>Logo depois do <b>primeiro</b>, mostre <code>&lt;p&gt;🏆 Primeiro lugar!&lt;/p&gt;</code> (use <code>$loop-&gt;first</code>).</li><li>Depois do <b>último</b>, mostre <code>&lt;p&gt;Fim do ranking: 3 alunos&lt;/p&gt;</code>, com <code>$loop-&gt;last</code> e <code>$loop-&gt;count</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;h1&gt;Ranking&lt;/h1&gt;<br>&nbsp; &lt;li&gt;1º Ana&lt;/li&gt;<br>&nbsp; &nbsp; &nbsp; &lt;p&gt;🏆 Primeiro lugar!&lt;/p&gt;<br>&nbsp; &nbsp; &nbsp; &lt;li&gt;2º Caio&lt;/li&gt;<br>&nbsp; &nbsp; &nbsp; &lt;li&gt;3º Bia&lt;/li&gt;<br>&nbsp; &nbsp; &nbsp; &nbsp; &lt;p&gt;Fim do ranking: 3 alunos&lt;/p&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Pinte as linhas pares: <code>&lt;li class="{{ $loop-&gt;even ? 'par' : 'impar' }}"&gt;</code>.</div>
+<script type="text/x-code">
+<?php
+criar_view("ranking", <<<'BLADE'
+<h1>Ranking</h1>
+@foreach ($ranking as $aluno)
+  <li>{{ $aluno }}</li>
+@endforeach
+BLADE);
+
+Route::get("/ranking", fn () => view("ranking", ["ranking" => ["Ana", "Caio", "Bia"]]));
+
+visitar("/ranking");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 07 · Conserte a view" data-expect='[&quot;Ana: 9.5&quot;, &quot;✅&quot;, &quot;&lt;/li&gt;&quot;, &quot;&lt;li&gt;&quot;, &quot;Caio: 6&quot;, &quot;&lt;/li&gt;&quot;, &quot;&lt;/ul&gt;&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Encontrar e corrigir erros de Blade lendo as mensagens.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>A view <code>notas</code> tem <b>3 erros</b>. Execute, leia o erro, corrija e execute de novo.</li><li>Atenção: um dos erros não dá mensagem nenhuma, só mostra um texto estranho na saída.</li><li>Quando estiver certa, a página lista os alunos e coloca ✅ só em quem tem média 7 ou mais.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;ul&gt;<br>&nbsp; &lt;li&gt;<br>&nbsp; &nbsp; Ana: 9.5<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ✅<br>&nbsp; &nbsp; &nbsp; &lt;/li&gt;<br>&nbsp; &lt;li&gt;<br>&nbsp; &nbsp; Caio: 6<br>&nbsp; &nbsp; &nbsp; &lt;/li&gt;<br>&lt;/ul&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Explique, para cada erro, por que ele quebrou a view (ou por que não quebrou).</div>
+<script type="text/x-code">
+<?php
+class Aluno {
+  public function __construct(public string $nome, public float $media) {}
+}
+
+criar_view("notas", <<<'BLADE'
+<ul>
+@foreach ($alunos as aluno)
+  <li>
+    {{ $aluno->nome }}: { $aluno->media }}
+    @if ($aluno->media >= 7)
+      ✅
+  </li>
+@endforeach
+</ul>
+BLADE);
+
+Route::get("/notas", fn () => view("notas", [
+  "alunos" => [new Aluno("Ana", 9.5), new Aluno("Caio", 6)],
+]));
+
+visitar("/notas");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 08 · Página com layout" data-expect='[&quot;&lt;title&gt;Contato | Greenn School&lt;/title&gt;&quot;, &quot;&lt;header&gt;🌱 Greenn School&lt;/header&gt;&quot;, &quot;&lt;h1&gt;Fale com a gente&lt;/h1&gt;&quot;, &quot;&lt;p&gt;contato@greenn.school&lt;/p&gt;&quot;, &quot;&lt;footer&gt;Aulas aos sábados&lt;/footer&gt;&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar uma página que estende um layout com @extends e @section.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>O layout <code>layouts.app</code> já está pronto. Crie a view <code>contato</code> começando com <code>@extends("layouts.app")</code>.</li><li>Preencha o título com <code>@section("titulo", "Contato")</code>.</li><li>Na seção <code>conteudo</code>, mostre <code>&lt;h1&gt;Fale com a gente&lt;/h1&gt;</code> e <code>&lt;p&gt;{{ $email }}&lt;/p&gt;</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;title&gt;Contato | Greenn School&lt;/title&gt;<br>&lt;header&gt;🌱 Greenn School&lt;/header&gt;<br>&lt;main&gt;<br>&nbsp; &nbsp; &lt;h1&gt;Fale com a gente&lt;/h1&gt;<br>&nbsp; &lt;p&gt;contato@greenn.school&lt;/p&gt;<br>&lt;/main&gt;<br>&lt;footer&gt;Aulas aos sábados&lt;/footer&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Crie a view <code>sobre</code> com o mesmo layout e a rota <code>Route::view("/sobre", "sobre")</code>.</div>
+<script type="text/x-code">
+<?php
+// resources/views/layouts/app.blade.php (pronto)
+criar_view("layouts.app", <<<'BLADE'
+<title>@yield("titulo") | Greenn School</title>
+<header>🌱 Greenn School</header>
+<main>
+  @yield("conteudo")
+</main>
+<footer>Aulas aos sábados</footer>
+BLADE);
+
+// resources/views/contato.blade.php
+criar_view("contato", <<<'BLADE'
+{{-- transforme esta página: ela ainda não usa o layout --}}
+<h1>Fale com a gente</h1>
+BLADE);
+
+Route::get("/contato", fn () => view("contato", ["email" => "contato@greenn.school"]));
+
+visitar("/contato");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 09 · Refatore com @include" data-expect='[&quot;&lt;h1&gt;Loja&lt;/h1&gt;&quot;, &quot;&lt;h3&gt;Caneca&lt;/h3&gt;&quot;, &quot;&lt;p&gt;R$ 25,00&lt;/p&gt;&quot;, &quot;&lt;h3&gt;Camiseta&lt;/h3&gt;&quot;, &quot;&lt;p&gt;R$ 59,90&lt;/p&gt;&quot;, &quot;&lt;h1&gt;Promoções&lt;/h1&gt;&quot;, &quot;&lt;h3&gt;Camiseta&lt;/h3&gt;&quot;, &quot;&lt;p&gt;R$ 39,90&lt;/p&gt;&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Tirar um pedaço repetido para um partial e reaproveitar.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>A view <code>loja</code> tem o HTML do card de produto escrito dentro do <code>@foreach</code>. A view <code>promocoes</code> precisa do <b>mesmo</b> card.</li><li>Crie o partial <code>partials.produto</code> com esse HTML.</li><li>Use <code>@include("partials.produto", ["produto" =&gt; $p])</code> nas <b>duas</b> views.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;h1&gt;Loja&lt;/h1&gt;<br>&nbsp; &lt;div class="produto"&gt;<br>&nbsp; &lt;h3&gt;Caneca&lt;/h3&gt;<br>&nbsp; &lt;p&gt;R$ 25,00&lt;/p&gt;<br>&lt;/div&gt;<br>&nbsp; &lt;div class="produto"&gt;<br>&nbsp; &lt;h3&gt;Camiseta&lt;/h3&gt;<br>&nbsp; &lt;p&gt;R$ 59,90&lt;/p&gt;<br>&lt;/div&gt;<br>&lt;h1&gt;Promoções&lt;/h1&gt;<br>&nbsp; &lt;div class="produto"&gt;<br>&nbsp; &lt;h3&gt;Camiseta&lt;/h3&gt;<br>&nbsp; &lt;p&gt;R$ 39,90&lt;/p&gt;<br>&lt;/div&gt;</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Mude o card no partial (por exemplo, coloque um botão Comprar) e veja as duas páginas mudarem juntas.</div>
+<script type="text/x-code">
+<?php
+// resources/views/loja.blade.php
+criar_view("loja", <<<'BLADE'
+<h1>Loja</h1>
+@foreach ($produtos as $p)
+  <div class="produto">
+    <h3>{{ $p["nome"] }}</h3>
+    <p>R$ {{ number_format($p["preco"], 2, ",", ".") }}</p>
+  </div>
+@endforeach
+BLADE);
+
+// resources/views/promocoes.blade.php
+criar_view("promocoes", <<<'BLADE'
+<h1>Promoções</h1>
+{{-- mostre os produtos com o mesmo card --}}
+BLADE);
+
+// crie o partial aqui
+
+Route::get("/loja", fn () => view("loja", ["produtos" => [
+  ["nome" => "Caneca", "preco" => 25],
+  ["nome" => "Camiseta", "preco" => 59.9],
+]]));
+Route::get("/promocoes", fn () => view("promocoes", ["produtos" => [
+  ["nome" => "Camiseta", "preco" => 39.9],
+]]));
+
+visitar("/loja");
+visitar("/promocoes");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 10 · Desafio: catálogo de cursos" data-expect='[&quot;&lt;li&gt;&lt;a href=\&quot;/cursos/1\&quot;&gt;HTML&lt;/a&gt;&lt;/li&gt;&quot;, &quot;&lt;li&gt;&lt;a href=\&quot;/cursos/2\&quot;&gt;Laravel&lt;/a&gt;&lt;/li&gt;&quot;, &quot;&lt;h1&gt;Laravel&lt;/h1&gt;&quot;, &quot;&lt;p&gt;6 aulas&lt;/p&gt;&quot;, &quot;404 | Página não encontrada&quot;]'>
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Montar rotas nomeadas, controller, layout e views com links e 404.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie <code>CursoController</code> com <code>index()</code> (todos os cursos na view <code>cursos.index</code>) e <code>show($id)</code> (um curso na view <code>cursos.show</code>, ou <code>abort(404)</code>).</li><li>Registre as rotas <code>/cursos</code> (nome <code>cursos.index</code>) e <code>/cursos/{id}</code> (nome <code>cursos.show</code>).</li><li>Na lista, cada curso é um link feito com <code>route('cursos.show', $curso-&gt;id)</code>. As views estendem o layout pronto.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;nav&gt;Greenn School&lt;/nav&gt;<br>&nbsp; &lt;h1&gt;Cursos&lt;/h1&gt;<br>&nbsp; &lt;ul&gt;<br>&nbsp; &nbsp; &nbsp; &lt;li&gt;&lt;a href="/cursos/1"&gt;HTML&lt;/a&gt;&lt;/li&gt;<br>&nbsp; &nbsp; &nbsp; &lt;li&gt;&lt;a href="/cursos/2"&gt;Laravel&lt;/a&gt;&lt;/li&gt;<br>&nbsp; &nbsp; &lt;/ul&gt;<br>&lt;nav&gt;Greenn School&lt;/nav&gt;<br>&nbsp; &lt;h1&gt;Laravel&lt;/h1&gt;<br>&nbsp; &lt;p&gt;6 aulas&lt;/p&gt;<br>404 | Página não encontrada</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Na página do curso, coloque um link <code>← voltar</code> para a lista, também com <code>route()</code>.</div>
+<script type="text/x-code">
+<?php
+// app/Models/Curso.php (pronto)
+class Curso {
+  public function __construct(public int $id, public string $nome, public int $aulas) {}
+
+  public static function all(): array {
+    return [1 => new Curso(1, "HTML", 4), 2 => new Curso(2, "Laravel", 6)];
+  }
+
+  public static function find(int $id): ?Curso {
+    return self::all()[$id] ?? null;
+  }
+}
+
+// resources/views/layouts/app.blade.php (pronto)
+criar_view("layouts.app", <<<'BLADE'
+<nav>Greenn School</nav>
+@yield("conteudo")
+BLADE);
+
+// resources/views/cursos/index.blade.php
+criar_view("cursos.index", <<<'BLADE'
+{{-- @extends, @section e um <li><a href="...">nome</a></li> por curso --}}
+BLADE);
+
+// resources/views/cursos/show.blade.php
+criar_view("cursos.show", <<<'BLADE'
+{{-- @extends, @section, <h1>nome</h1> e <p>6 aulas</p> --}}
+BLADE);
+
+// app/Http/Controllers/CursoController.php
+// crie o controller aqui
+
+// routes/web.php
+// registre as rotas aqui
+
+visitar("/cursos");
+visitar("/cursos/2");
+visitar("/cursos/7");
+</script>
+</section>
+
+</div>
+
+<!-- Mini-Laravel: carregado antes do código nos exemplos com data-kit="laravel" (cópia de php-03-rotas-blade/mini-laravel.php) -->
+<script type="text/x-kit" id="kit-laravel">
+<?php
+// MINI-LARAVEL DO PLAYGROUND (versão da L3: rotas + Blade)
+// Uma versão de brinquedo do que o Laravel faz quando chega um pedido.
+// No site ele já vem carregado (como o dd); no computador: require "mini-laravel.php";
+//
+// ROTAS (routes/web.php)
+//   Route::get($url, $acao)                  registra uma rota; $acao = function ou [Controller::class, "metodo"]
+//     ->name("cursos.show")                  dá um nome à rota
+//     ->where("id", "[0-9]+") / ->whereNumber("id")   restringe um parâmetro
+//   Route::view($url, $view, $dados)         rota que só mostra uma view
+//   Route::redirect($de, $para)              redireciona uma URL para outra
+//   Route::prefix("admin")->name("admin.")->group(function () { ... })   grupo de rotas
+//   route($nome, $parametros)                monta a URL de uma rota pelo nome
+//   abort(404)                               interrompe e responde com erro
+//   visitar($url)                            simula o navegador pedindo uma URL
+//
+// VIEWS (resources/views)
+//   criar_view($nome, $blade)                faz o papel de um arquivo .blade.php
+//   view($nome, $dados)                      monta o HTML da view com os dados
+//   compilar_blade($blade)                   mostra o PHP em que o Blade se transforma
+//   e($texto), asset($caminho), url($caminho)
+namespace App\Http\Controllers {
+  // no Laravel: app/Http/Controllers/Controller.php
+  abstract class Controller {}
+}
+
+namespace {
+  class_alias(App\Http\Controllers\Controller::class, 'Controller');
+
+  // ===================== ROTAS =====================
+
+  class HttpErro extends Exception {}
+
+  class RotaRegistrada {
+    public ?string $nome = null;
+    public array $regras = [];
+
+    public function __construct(public string $url, public mixed $acao) {}
+
+    public function name(string $nome): static {
+      $this->nome = Route::$prefixoNome . $nome;
+      return $this;
+    }
+
+    public function where(string|array $param, ?string $regex = null): static {
+      $regras = is_array($param) ? $param : [$param => $regex];
+      $this->regras = array_merge($this->regras, $regras);
+      return $this;
+    }
+
+    public function whereNumber(string $param): static {
+      return $this->where($param, '[0-9]+');
+    }
+
+    // "/cursos/{id}/{aula?}" vira #^/cursos/([0-9]+)(?:/([^/]+))?$#
+    public function regex(): string {
+      $r = preg_replace_callback('#/\{(\w+)(\?)?\}#', function ($m) {
+        $parte = '(' . ($this->regras[$m[1]] ?? '[^/]+') . ')';
+        return isset($m[2]) ? "(?:/$parte)?" : "/$parte";
+      }, $this->url);
+      return '#^' . $r . '$#';
+    }
+  }
+
+  class GrupoDeRotas {
+    private string $prefixo = '';
+    private string $nome = '';
+
+    public function prefix(string $prefixo): static { $this->prefixo = trim($prefixo, '/'); return $this; }
+    public function name(string $nome): static { $this->nome = $nome; return $this; }
+
+    public function group(Closure $rotas): void {
+      [$p, $n] = [Route::$prefixo, Route::$prefixoNome];
+      if ($this->prefixo !== '') Route::$prefixo .= '/' . $this->prefixo;
+      Route::$prefixoNome .= $this->nome;
+      $rotas();
+      [Route::$prefixo, Route::$prefixoNome] = [$p, $n];
+    }
+  }
+
+  class Route {
+    public static array $rotas = [];
+    public static string $prefixo = '';
+    public static string $prefixoNome = '';
+
+    public static function get(string $url, array|Closure $acao): RotaRegistrada {
+      $url = '/' . trim(self::$prefixo . '/' . trim($url, '/'), '/');
+      return self::$rotas[] = new RotaRegistrada($url, $acao);
+    }
+
+    public static function view(string $url, string $view, array $dados = []): RotaRegistrada {
+      return self::get($url, fn () => view($view, $dados));
+    }
+
+    public static function redirect(string $de, string $para): RotaRegistrada {
+      return self::get($de, fn () => new Redirecionamento($para));
+    }
+
+    public static function prefix(string $prefixo): GrupoDeRotas {
+      return (new GrupoDeRotas())->prefix($prefixo);
+    }
+
+    public static function name(string $nome): GrupoDeRotas {
+      return (new GrupoDeRotas())->name($nome);
+    }
+
+    public static function despachar(string $url): string {
+      $url = '/' . trim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+      try {
+        foreach (self::$rotas as $rota) {
+          if (preg_match($rota->regex(), $url, $partes)) {
+            array_shift($partes);                                       // sobram só os {parâmetros}
+            while ($partes && end($partes) === '') array_pop($partes);  // opcionais que não vieram
+            $acao = $rota->acao;
+            if (is_array($acao)) {
+              [$classe, $metodo] = $acao;
+              $acao = [new $classe(), $metodo];
+            }
+            $resposta = $acao(...$partes);
+            if ($resposta instanceof Redirecionamento) {
+              return "↪ 302: redirecionando para $resposta->para\n" . self::despachar($resposta->para);
+            }
+            if (is_array($resposta) || $resposta instanceof JsonSerializable) {
+              return json_encode($resposta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            }
+            return (string) $resposta;
+          }
+        }
+        abort(404);
+      } catch (HttpErro $erro) {
+        return $erro->getMessage();
+      }
+    }
+  }
+
+  class Redirecionamento {
+    public function __construct(public string $para) {}
+  }
+
+  function redirect(string $para): Redirecionamento {
+    return new Redirecionamento($para);
+  }
+
+  function route(string $nome, mixed $parametros = []): string {
+    foreach (Route::$rotas as $rota) {
+      if ($rota->nome !== $nome) continue;
+      $parametros = is_array($parametros) ? $parametros : [$parametros];
+      $url = preg_replace_callback('#/\{(\w+)(\?)?\}#', function ($m) use (&$parametros, $nome) {
+        $valor = array_key_exists($m[1], $parametros) ? $parametros[$m[1]] : array_shift($parametros);
+        unset($parametros[$m[1]]);
+        if ($valor === null && isset($m[2])) return '';
+        if ($valor === null) throw new Exception("Faltou o parâmetro {{$m[1]}} para a rota \"$nome\"");
+        return '/' . $valor;
+      }, $rota->url);
+      return $url === '' ? '/' : $url;
+    }
+    throw new Exception("A rota \"$nome\" não existe (confira o ->name)");
+  }
+
+  function abort(int $codigo, string $mensagem = ''): never {
+    $textos = [403 => 'Acesso proibido', 404 => 'Página não encontrada', 500 => 'Erro no servidor'];
+    throw new HttpErro("$codigo | " . ($mensagem ?: ($textos[$codigo] ?? 'Erro')));
+  }
+
+  function visitar(string $url): void {
+    echo Route::despachar($url), "\n";
+  }
+
+  function url(string $caminho = ''): string {
+    return '/' . ltrim($caminho, '/');
+  }
+
+  function asset(string $caminho): string {
+    return url($caminho);
+  }
+
+  // HTML confiável (ex.: o $slot de um componente): o {{ }} não escapa
+  class HtmlString {
+    public function __construct(public string $html) {}
+    public function __toString(): string { return $this->html; }
+  }
+
+  function e(mixed $valor): string {
+    if ($valor instanceof HtmlString) return (string) $valor;
+    return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+  }
+
+  function csrf_token(): string {
+    return 'token-do-formulario';
+  }
+
+  // ===================== BLADE =====================
+
+  // $loop: existe dentro de todo @foreach do Blade
+  class Loop {
+    public int $index = -1;
+    public int $iteration = 0;
+    public bool $first = false;
+    public bool $last = false;
+    public bool $even = false;
+    public bool $odd = false;
+    public int $remaining;
+
+    public function __construct(public int $count, public ?Loop $parent = null) {
+      $this->remaining = $count;
+    }
+
+    public function passo(): void {
+      $this->index++;
+      $this->iteration++;
+      $this->first = $this->iteration === 1;
+      $this->last = $this->iteration === $this->count;
+      $this->even = $this->iteration % 2 === 0;
+      $this->odd = !$this->even;
+      $this->remaining = $this->count - $this->iteration;
+    }
+  }
+
+  class Blade {
+    public static array $arquivos = [];
+    private static array $secoes = [];
+    private static array $abertas = [];
+
+    // transforma Blade em PHP (o Laravel faz isso e guarda em storage/framework/views)
+    public static function compilar(string $t): string {
+      $t = preg_replace('/\{\{--.*?--\}\}/s', '', $t);                                   // {{-- comentário --}}
+      $t = self::componentes($t);
+      // (o PHP engole a quebra de linha logo depois do fechamento da tag: por isso ela vai em dobro)
+      $t = preg_replace('/\{!!\s*(.+?)\s*!!\}(\r?\n)?/s', '<?php echo $1; ?>$2$2', $t);           // {!! sem escapar !!}
+      $t = preg_replace('/(?<!@)\{\{\s*(.+?)\s*\}\}(\r?\n)?/s', '<?php echo e($1); ?>$2$2', $t);  // {{ escapado }}
+      $t = str_replace('@{{', '{{', $t);
+      $parenteses = '(\s*\((?:[^()\'"]++|\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*"|(?2))*\))?';
+      return preg_replace_callback('/\B@(\w+)' . $parenteses . '([ \t]*\r?\n)?/', function ($m) {
+        $args = isset($m[2]) && $m[2] !== '' ? trim(substr(trim($m[2]), 1, -1)) : null;
+        $php = self::diretiva($m[1], $args);
+        if ($php === null) return $m[0];   // diretiva desconhecida: fica como está (ex.: e-mails)
+        $nl = $m[3] ?? '';
+        // as que mostram algo (@include, @yield…) mantêm a quebra de linha depois delas
+        return in_array($m[1], ['include', 'yield', 'json', 'csrf', 'method']) ? $php . $nl . $nl : $php . $nl;
+      }, $t);
+    }
+
+    private static function diretiva(string $nome, ?string $a): ?string {
+      return match ($nome) {
+        'if' => "<?php if ($a): ?>",
+        'elseif' => "<?php elseif ($a): ?>",
+        'else' => '<?php else: ?>',
+        'endif', 'endunless', 'endisset', 'endempty', 'endforelse' => '<?php endif; ?>',
+        'unless' => "<?php if (!($a)): ?>",
+        'isset' => "<?php if (isset($a)): ?>",
+        'empty' => $a === null
+          ? '<?php endforeach; $loop = array_pop($__loops); if (array_pop($__vazios)): ?>'   // o @empty do @forelse
+          : "<?php if (empty($a)): ?>",
+        'foreach', 'forelse' => self::laco($nome, $a),
+        'endforeach' => '<?php endforeach; $loop = array_pop($__loops); ?>',
+        'for' => "<?php for ($a): ?>",
+        'endfor' => '<?php endfor; ?>',
+        'while' => "<?php while ($a): ?>",
+        'endwhile' => '<?php endwhile; ?>',
+        'php' => $a === null ? '<?php ' : "<?php $a; ?>",
+        'endphp' => ' ?>',
+        'extends' => "<?php \$__pai = $a; ?>",
+        'section' => "<?php Blade::section($a); ?>",
+        'endsection', 'stop' => '<?php Blade::endsection(); ?>',
+        'yield' => "<?php echo Blade::mostrar($a); ?>",
+        'include' => "<?php echo Blade::incluir(get_defined_vars(), $a); ?>",
+        'props' => "<?php foreach ($a as \$__k => \$__v) { if (is_int(\$__k)) continue; \$\$__k ??= \$__v; } ?>",
+        'json' => "<?php echo json_encode($a, JSON_UNESCAPED_UNICODE); ?>",
+        'csrf' => '<input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">',
+        'method' => "<input type=\"hidden\" name=\"_method\" value=\"<?php echo $a; ?>\">",
+        default => null,
+      };
+    }
+
+    // @foreach($cursos as $curso) guarda o $loop de fora e cria um novo
+    private static function laco(string $tipo, string $a): string {
+      [$lista, $vars] = preg_split('/\s+as\s+/', $a, 2);
+      $vazio = $tipo === 'forelse' ? ' $__vazios[] = empty($__lista);' : '';
+      return "<?php \$__loops[] = \$loop ?? null; \$__lista = $lista;$vazio "
+        . "\$loop = new Loop(count(\$__lista), end(\$__loops) ?: null); "
+        . "foreach (\$__lista as $vars): \$loop->passo(); ?>";
+    }
+
+    // <x-alerta tipo="erro" :titulo="$t">texto</x-alerta>  vira  a view components.alerta com $slot
+    private static function componentes(string $t): string {
+      $attrs = '((?:\s+:?[\w-]+(?:="[^"]*")?)*)';
+      $converte = function (string $nome, string $atributos, ?string $slot, string $nl = '') {
+        preg_match_all('/(:?)([\w-]+)(?:="([^"]*)")?/', $atributos, $lista, PREG_SET_ORDER);
+        $dados = [];
+        foreach ($lista as [, $dinamico, $chave, $valor]) {
+          $valor ??= 'true';
+          $dados[] = var_export(lcfirst(str_replace('-', '', ucwords($chave, '-'))), true) . ' => '
+            . ($dinamico ? $valor : var_export($valor, true));
+        }
+        $dados = '[' . implode(', ', $dados) . ']';
+        if ($slot === null) return "<?php echo Blade::componente('$nome', $dados, ''); ?>$nl$nl";
+        return "<?php ob_start(); ?>$slot<?php echo Blade::componente('$nome', $dados, ob_get_clean()); ?>$nl$nl";
+      };
+      $t = preg_replace_callback('#<x-([\w.-]+)' . $attrs . '\s*/>(\r?\n)?#',
+        fn ($m) => $converte($m[1], $m[2], null, $m[3] ?? ''), $t);
+      do {
+        $antes = $t;
+        $t = preg_replace_callback('#<x-([\w.-]+)' . $attrs . '\s*>((?:(?!<x-).)*?)</x-\1>(\r?\n)?#s',
+          fn ($m) => $converte($m[1], $m[2], $m[3], $m[4] ?? ''), $t);
+      } while ($t !== $antes);
+      return $t;
+    }
+
+    public static function render(string $__view, array $__dados = []): string {
+      if (!isset(self::$arquivos[$__view])) {
+        throw new Exception("A view \"$__view\" não existe (crie com criar_view)");
+      }
+      $__pai = null;
+      extract($__dados);   // cada chave do array vira uma variável dentro da view
+      $__nivel = ob_get_level();
+      $__secoesAbertas = count(self::$abertas);
+      ob_start();
+      try {
+        eval('?>' . self::compilar(self::$arquivos[$__view]));
+        if (count(self::$abertas) > $__secoesAbertas) {
+          throw new Exception("Faltou o @endsection na view \"$__view\"");
+        }
+      } finally {
+        $__html = '';
+        while (ob_get_level() > $__nivel) $__html = ob_get_clean() . $__html;
+      }
+      // a view tem @extends: monta o layout, que mostra as @section com @yield
+      return $__pai ? self::render($__pai, $__dados) : $__html;
+    }
+
+    public static function section(string $nome, mixed $valor = null): void {
+      if (func_num_args() === 2) {
+        self::$secoes[$nome] ??= e($valor);
+        return;
+      }
+      self::$abertas[] = $nome;
+      ob_start();
+    }
+
+    public static function endsection(): void {
+      $nome = array_pop(self::$abertas);
+      $conteudo = ob_get_clean();
+      self::$secoes[$nome] ??= $conteudo;   // a seção da página filha vale mais que a do layout
+    }
+
+    public static function mostrar(string $nome, string $padrao = ''): string {
+      return self::$secoes[$nome] ?? e($padrao);
+    }
+
+    public static function incluir(array $vars, string $view, array $dados = []): string {
+      $vars = array_filter($vars, fn ($k) => !str_starts_with($k, '__') && $k !== 'loop', ARRAY_FILTER_USE_KEY);
+      return self::render($view, array_merge($vars, $dados));
+    }
+
+    public static function componente(string $nome, array $dados, string $slot): string {
+      return self::render("components.$nome", $dados + ['slot' => new HtmlString($slot)]);
+    }
+
+    public static function limpar(): void {
+      self::$secoes = [];
+      self::$abertas = [];
+    }
+  }
+
+  function criar_view(string $nome, string $blade): void {
+    Blade::$arquivos[$nome] = $blade;
+  }
+
+  function view(string $nome, array $dados = []): string {
+    Blade::limpar();
+    return Blade::render($nome, $dados);
+  }
+
+  function compilar_blade(string $blade): string {
+    return Blade::compilar($blade);
+  }
+}
+</script>
+
+<script>
+(function(){
+  // ---------- Carrega exemplos ----------
+  const exs = [...document.querySelectorAll('#examples .ex')].map(s => ({
+    group: s.dataset.group, title: s.dataset.title,
+    desc: s.querySelector('.desc').innerHTML,
+    tryit: s.querySelector('.try') ? s.querySelector('.try').innerHTML : '',
+    expect: s.dataset.expect ? JSON.parse(s.dataset.expect) : null,
+    kit: s.dataset.kit ? document.getElementById('kit-' + s.dataset.kit).textContent.trim() : '',
+    code: s.querySelector('script').textContent.replace(/^\n/, '').replace(/\s+$/, '') + '\n'
+  }));
+  const edits = exs.map(e => e.code);
+  let cur = 0;
+  const $ = id => document.getElementById(id);
+  const code = $('code'), hl = $('hl'), out = $('out'), status = $('status');
+
+  // ---------- Menu ----------
+  const nav = $('nav'), mnav = $('mnav'); let lastG = null;
+  exs.forEach((e, i) => {
+    if (e.group !== lastG) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = e.group; nav.appendChild(g); lastG = e.group; }
+    const b = document.createElement('button'); b.className = 'nav';
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span>`;
+    b.appendChild(document.createTextNode(e.title)); b.onclick = () => show(i); nav.appendChild(b);
+    const o = document.createElement('option'); o.value = i; o.textContent = `${String(i + 1).padStart(2, '0')} · ${e.group} · ${e.title}`; mnav.appendChild(o);
+  });
+  mnav.onchange = () => show(+mnav.value);
+
+  // ---------- Destaque de sintaxe (PHP) ----------
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const re = /(\{\{--[\s\S]*?--\}\}|\/\/[^\n]*|#[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?)|(<\?php|\?>|\{\{|\}\}|\{!!|!!\}|\B@[a-z]+\b)|(\$[A-Za-z_]\w*)|\b(echo|print|if|elseif|else|while|do|for|foreach|as|switch|case|break|default|return|function|fn|new|class|public|private|protected|static|null|true|false|and|or|not|array|int|float|string|bool|void|match|continue|use|namespace|require|include|try|catch|throw|extends|implements|isset|empty|unset|list|const|self|parent|abstract|readonly|interface|instanceof|Closure)\b|\b(\d+(?:\.\d+)?)\b/g;
+  function highlight(src){
+    let h = '', last = 0, m; re.lastIndex = 0;
+    while ((m = re.exec(src))) {
+      h += esc(src.slice(last, m.index));
+      const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : m[4] ? 'v' : m[5] ? 'k' : 'd';
+      h += `<span class="${cls}">${esc(m[0])}</span>`;
+      last = re.lastIndex;
+    }
+    return h + esc(src.slice(last)) + '\n';
+  }
+  function paint(){ hl.innerHTML = highlight(code.value); hl.scrollTop = code.scrollTop; hl.scrollLeft = code.scrollLeft; }
+  code.addEventListener('input', () => { edits[cur] = code.value; paint(); });
+  code.addEventListener('scroll', () => { hl.scrollTop = code.scrollTop; hl.scrollLeft = code.scrollLeft; });
+  code.addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); code.setRangeText('  ', code.selectionStart, code.selectionEnd, 'end'); code.dispatchEvent(new Event('input')); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); }
+  });
+
+  // ---------- Mostrar exemplo ----------
+  function show(i){
+    cur = Math.max(0, Math.min(exs.length - 1, i)); const e = exs[cur];
+    $('grp').textContent = e.group; $('title').textContent = e.title; $('desc').innerHTML = e.desc; $('try').innerHTML = e.tryit;
+    code.value = edits[cur]; code.scrollTop = 0; paint();
+    [...nav.querySelectorAll('.nav')].forEach((b, j) => b.classList.toggle('on', j === cur));
+    mnav.value = cur; $('pos').textContent = `${cur + 1} de ${exs.length}`;
+    $('prev').disabled = cur === 0; $('next').disabled = cur === exs.length - 1;
+    clearOut(); try { history.replaceState(null, '', '#' + (cur + 1)); } catch(_){}
+  }
+
+  // ---------- Saída ----------
+  const MAX_LINES = 300; let lines = 0, hidden = 0, got = [], raw = '';
+  const pageBtn = $('aspage'), pageFrame = $('pageframe'); let asPage = false;
+  function setView(p){ asPage = p; out.hidden = p; pageFrame.hidden = !p; pageBtn.textContent = p ? '≡ ver como texto' : '🌐 ver como página'; if (p) pageFrame.srcdoc = raw; }
+  pageBtn.onclick = () => setView(!asPage);
+  function clearOut(){ out.innerHTML = '<div class="empty">Clique em ▶ Executar para ver o resultado aqui.</div>'; status.textContent = ''; status.className = 'status'; lines = 0; hidden = 0; got = []; raw = ''; if (asPage) setView(false); }
+  function addLine(text, cls){
+    if (lines === 0) out.innerHTML = '';
+    if (!cls) got.push(String(text).trim());
+    if (lines >= MAX_LINES && !cls) { hidden++; return; }
+    lines++;
+    const d = document.createElement('div'); d.className = 'ln' + (cls ? ' ' + cls : '');
+    if (cls !== 'tip' && cls !== 'win') { const n = document.createElement('span'); n.className = 'i'; n.textContent = cls === 'err' ? '!' : lines; d.appendChild(n); }
+    const t = document.createElement('span'); t.textContent = text; d.appendChild(t);
+    out.appendChild(d); out.scrollTop = out.scrollHeight;
+  }
+  function dica(msg){
+    if (/não existe \(crie com criar_view\)/.test(msg)) return 'Dica: o nome no view("...") tem que ser igual ao do criar_view("..."). A pasta vira ponto: resources/views/cursos/index.blade.php é "cursos.index".';
+    if (/A rota ".*" não existe/.test(msg)) return 'Dica: nenhuma rota tem esse ->name("..."). Confira o nome (com o ponto) e se a rota foi registrada antes de chamar route().';
+    if (/Faltou o parâmetro/.test(msg)) return 'Dica: essa rota tem um {parâmetro}: passe o valor no route(), ex.: route("cursos.show", 3).';
+    if (/Faltou o @endsection/.test(msg)) return 'Dica: todo @section("nome") com conteúdo termina com @endsection (a forma curta @section("titulo", "Texto") não precisa).';
+    if (/eval\(\)'d code/.test(msg) && /syntax error|unexpected/.test(msg)) return 'Dica: erro dentro de uma view Blade. Confira se todo @if tem @endif, todo @foreach tem @endforeach, e se as variáveis têm $ (inclusive no "as $item").';
+    if (/eval\(\)'d code/.test(msg) && /Undefined variable/.test(msg)) return 'Dica: essa variável não chegou na view. Tudo o que a view usa precisa estar no array do view("nome", [...]).';
+    if (/Undefined constant/.test(msg)) return 'Dica: faltou o $ na variável. No PHP e no Blade, toda variável começa com $.';
+    if (/unexpected end of file/.test(msg)) return 'Dica: o PHP chegou ao fim do arquivo esperando algo. Faltou fechar uma chave } ou uma aspa.';
+    if (/expecting "?;"?/.test(msg) || /unexpected .* expecting/.test(msg)) return 'Dica: erro de digitação perto dessa linha. Em PHP toda instrução termina com ; e as variáveis começam com $.';
+    if (/syntax error/.test(msg)) return 'Dica: erro de sintaxe. Confira parênteses ( ), chaves { }, aspas e o ; no fim da linha anterior.';
+    if (/Undefined variable/.test(msg)) return 'Dica: essa variável não existe (ou está escrita diferente). Em PHP toda variável começa com $ e maiúsculas contam.';
+    if (/Call to undefined function/.test(msg)) return 'Dica: essa função não existe. Confira o nome (ex.: strlen, count, strtoupper) ou declare a função antes de chamar.';
+    if (/Undefined array key/.test(msg)) return 'Dica: essa chave não existe no array. Confira o nome da chave (ou o índice: começa em 0).';
+    if (/Division by zero/.test(msg)) return 'Dica: divisão por zero. Confira o divisor (um array vazio tem count 0).';
+    if (/Cannot redeclare/.test(msg)) return 'Dica: a função foi declarada duas vezes. Deixe só uma function com esse nome.';
+    if (/Unsupported operand types|must be of type/.test(msg)) return 'Dica: tipo errado. Confira se o valor é número ou texto; para juntar textos use o ponto (.), não o +.';
+    if (/Too few arguments/.test(msg)) return 'Dica: a função foi chamada com menos argumentos do que pede.';
+    if (/Array to string conversion/.test(msg)) return 'Dica: você tentou mostrar um array inteiro com echo. Use foreach, implode ou print_r.';
+    if (/Class ".*" not found/.test(msg)) return 'Dica: essa classe não existe. Confira o nome (maiúsculas contam), se ela foi declarada e, com namespace, se faltou o use.';
+    if (/Call to undefined method/.test(msg)) return 'Dica: esse método não existe na classe. Confira o nome e se ele está dentro das chaves { } da classe.';
+    if (/Cannot (access|modify) private/.test(msg) || /Call to private method/.test(msg)) return 'Dica: isso é private: só pode ser usado de dentro da classe. Use um método public para acessar.';
+    if (/must not be accessed before initialization/.test(msg)) return 'Dica: essa propriedade ainda não recebeu valor. Preencha antes de usar (ou use um construtor).';
+    if (/Cannot declare class|Cannot redeclare class/.test(msg)) return 'Dica: a classe foi declarada duas vezes. Deixe só uma class com esse nome.';
+    if (/Using \$this when not in object context/.test(msg)) return 'Dica: $this só existe dentro de um método chamado por um objeto (não em métodos static).';
+    if (/Object of class .* could not be converted to string/.test(msg)) return 'Dica: você tentou dar echo num objeto inteiro. Mostre uma propriedade ($obj->nome) ou use dump($obj).';
+    if (/Undefined property/.test(msg)) return 'Dica: essa propriedade não existe no objeto. Confira o nome (sem $ depois da setinha: $obj->nome).';
+    return '';
+  }
+
+  // ---------- Execução no Worker com PHP (php-wasm) ----------
+  let worker = null, ready = false, timer = null, t0 = 0, runId = 0, pendingRun = null;
+  const runBtn = $('run');
+  function boot(quiet){
+    ready = false; runBtn.disabled = true; runBtn.textContent = '⏳ Carregando PHP…';
+    if (!quiet) { status.className = 'status'; status.textContent = 'Carregando o PHP no navegador (12 MB, só na primeira vez)…'; }
+    worker = new Worker('/php/runner.js', { type: 'module' });
+    worker.onmessage = ({ data }) => {
+      if (data.ready) { ready = true; runBtn.disabled = false; runBtn.textContent = '▶ Executar'; if (!lines && !/✓|✗/.test(status.textContent)) status.textContent = 'PHP ' + (data.version || '') + ' pronto.'; if (pendingRun) { const s = pendingRun; pendingRun = null; exec(s); } return; }
+      if (data.id !== runId || !timer) return;
+      clearTimeout(timer); timer = null;
+      let hadErr = false;
+      raw = data.out.filter(([t]) => t === 'out').map(([, x]) => x).join('');
+      for (const [t, text] of data.out) for (const ln of text.replace(/\n$/, '').split('\n')) {
+        if (!ln.trim()) continue;
+        const isErr = t === 'err' || /^(PHP )?(Fatal error|Parse error|Warning|Notice|Deprecated)\b/.test(ln);
+        addLine(ln, isErr ? 'err' : undefined);
+        if (isErr) { hadErr = true; const d = dica(ln); if (d) addLine(d, 'tip'); }
+      }
+      if (data.fatal) { addLine(data.fatal, 'err'); hadErr = true; }
+      finish(!hadErr, hadErr ? '✗ O código tem um erro' : `✓ Executado em ${Math.round(performance.now() - t0)} ms`);
+    };
+    worker.onerror = ev => { ev.preventDefault(); status.className = 'status bad'; status.textContent = 'Não consegui carregar o PHP: ' + (ev.message || 'erro'); };
+  }
+  function finish(ok, msg){
+    timer = null;
+    if (hidden) addLine(`… mais ${hidden} linha(s) não mostrada(s)`, 'tip');
+    if (lines === 0 && ok) out.innerHTML = '<div class="empty">(O código rodou, mas não mostrou nada. Faltou um echo?)</div>';
+    const exp = exs[cur].expect;
+    if (ok && exp) {
+      let k = 0; for (const g of got) { if (k < exp.length && g === exp[k]) k++; }
+      if (k === exp.length) { addLine('🎉 Correto! A saída bate com a esperada. Agora faça o "teste também" lá em cima.', 'win'); msg = '✓ Exercício resolvido!'; }
+      else if (got.length === 0) { addLine('Nada apareceu na saída. Em PHP, o que aparece é o que você manda com echo.', 'tip'); ok = false; msg = '✗ Nada foi mostrado: faltou um echo?'; }
+      else { addLine('Ainda não bateu. Compare com a "Saída esperada" lá em cima: cada letra, espaço e acento conta. Esperado: ' + exp.slice(0, 4).join(' | ') + (exp.length > 4 ? ' …' : ''), 'tip'); ok = false; msg = '✗ Ainda não: confira a saída esperada'; }
+    }
+    status.className = 'status ' + (ok ? 'ok' : 'bad'); status.textContent = msg;
+    if (asPage) pageFrame.srcdoc = raw;
+  }
+  function exec(src){
+    runId++; const id = runId; t0 = performance.now();
+    timer = setTimeout(() => {
+      addLine('⏱ Execução interrompida depois de 3 segundos: parece um loop infinito! A condição do while nunca ficou false.', 'tip');
+      finish(false, '✗ Loop infinito interrompido'); worker.terminate(); boot(true);
+    }, 3000);
+    worker.postMessage({ id, code: src, kit: exs[cur].kit });
+  }
+  function run(){
+    clearOut(); out.innerHTML = ''; lines = 0;
+    status.className = 'status'; status.textContent = 'Executando…';
+    const src = code.value;
+    if (!/^\s*<\?php/.test(src)) addLine('Dica: todo arquivo PHP começa com <?php. Sem ele, o PHP devolve o texto do jeito que está.', 'tip');
+    if (!ready) { pendingRun = src; status.textContent = 'Esperando o PHP carregar…'; return; }
+    exec(src);
+  }
+  boot();
+
+  // ---------- Botões ----------
+  runBtn.onclick = run; $('clear').onclick = clearOut;
+  $('reset').onclick = () => { edits[cur] = exs[cur].code; code.value = edits[cur]; paint(); clearOut(); };
+  $('prev').onclick = () => show(cur - 1); $('next').onclick = () => show(cur + 1);
+  const root = document.documentElement; const defFs = window.innerWidth < 1000 ? 16 : 22;
+  let fs = defFs; try { fs = +localStorage.getItem('pg-fs') || defFs; } catch(_){}
+  const setFs = v => { fs = Math.max(14, Math.min(40, v)); root.style.setProperty('--fs', fs + 'px'); try { localStorage.setItem('pg-fs', fs); } catch(_){} };
+  setFs(fs); $('bigger').onclick = () => setFs(fs + 2); $('smaller').onclick = () => setFs(fs - 2);
+  document.addEventListener('keydown', e => { if (document.activeElement === code) return; if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
+  const start = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>
