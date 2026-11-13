@@ -16,9 +16,11 @@ function __pg_fmt($v, $n = 0) {
     return $s . $pad . "]";
   }
   if (is_object($v)) {
-    $s = get_class($v) . " {\\n";
-    foreach (get_object_vars($v) as $k => $x) $s .= $pad . "  +" . $k . ": " . __pg_fmt($x, $n + 1) . "\\n";
-    return $s . $pad . "}";
+    // models e collections do mini-Laravel dizem o que mostrar (__pgDump)
+    [$nome, $vars, $lista] = method_exists($v, '__pgDump') ? $v->__pgDump() : [get_class($v), get_object_vars($v), false];
+    $s = $nome . ($lista ? ":" . count($vars) . " [" : " {") . "\\n";
+    foreach ($vars as $k => $x) $s .= $pad . "  " . ($lista ? $k . " => " : "+" . $k . ": ") . __pg_fmt($x, $n + 1) . "\\n";
+    return $s . $pad . ($lista ? "]" : "}");
   }
   return gettype($v);
 }
@@ -28,7 +30,14 @@ function dd(...$vars) { dump(...$vars); exit; }
 let php = null, out = [], version = '';
 async function boot() {
   const { PhpWeb } = await import('./PhpWeb.mjs');
-  php = new PhpWeb();
+  // runner.js?libs=sqlite carrega também as extensões sqlite3 e pdo_sqlite (só as aulas de banco de dados precisam)
+  const libs = new URL(self.location.href).searchParams.get('libs') || '';
+  const sharedLibs = libs.split(',').includes('sqlite') ? [
+    { name: 'php8.4-sqlite.so', url: new URL('./sqlite/php8.4-sqlite.so', import.meta.url), ini: true },
+    { name: 'php8.4-pdo-sqlite.so', url: new URL('./sqlite/php8.4-pdo-sqlite.so', import.meta.url), ini: true },
+    { name: 'libsqlite3.so', url: new URL('./sqlite/libsqlite3.so', import.meta.url) },
+  ] : [];
+  php = new PhpWeb({ version: '8.4', sharedLibs });
   php.addEventListener('output', e => out.push(['out', e.detail.join('')]));
   php.addEventListener('error', e => out.push(['err', e.detail.join('')]));
   await php.binary;

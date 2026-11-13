@@ -1,0 +1,3023 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laravel 4 · Banco de dados: migrations e Eloquent — Greenn School</title>
+<style>
+  :root{
+    --bg:#15171E; --panel:#1F2330; --panel2:#262B3A; --line:#323849;
+    --ink:#EDEAE0; --muted:#9AA0AE; --acc:#F0C23B; --ok:#7FD18B; --err:#FF7A7A;
+    --str:#A8D5A2; --kw:#F0C23B; --num:#F4A77A; --com:#7E879B; --bool:#8FC7FF;
+    --fs:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .app{display:grid;grid-template-columns:290px 1fr;height:100vh}
+  /* Sidebar */
+  aside{background:#11131A;border-right:1px solid var(--line);overflow-y:auto;padding:24px 0}
+  .brand{padding:0 24px 20px;border-bottom:1px solid var(--line);margin-bottom:12px}
+  .brand .num{font-family:"JetBrains Mono",Consolas,monospace;color:var(--acc);font-size:40px;font-weight:700;line-height:1}
+  .brand .t{font-size:20px;font-weight:600;margin-top:8px}
+  .brand .s{font-size:14px;color:var(--muted);margin-top:4px}
+  .grp{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:16px 24px 6px}
+  .nav{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:inherit;font-size:16px;padding:9px 24px;cursor:pointer;border-left:3px solid transparent}
+  .nav:hover{background:#1A1D26}
+  .nav.on{background:#1F2330;border-left-color:var(--acc);color:var(--acc);font-weight:600}
+  .nav .n{font-family:Consolas,monospace;color:var(--muted);margin-right:8px;font-size:14px}
+  /* Main */
+  main{display:flex;flex-direction:column;min-width:0;padding:28px 36px;gap:18px;overflow:hidden}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+  .eyebrow{display:inline-block;background:var(--acc);color:var(--bg);font-weight:700;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:6px}
+  h1{margin:10px 0 6px;font-size:calc(var(--fs) * 1.6);line-height:1.15}
+  .desc{color:#C4C8D2;font-size:calc(var(--fs) * .82);line-height:1.5;max-width:1100px}
+  .desc code,.try code{font-family:"JetBrains Mono",Consolas,monospace;background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--acc)}
+  .try{margin-top:10px;font-size:calc(var(--fs) * .72);color:var(--muted)}
+  .try b{color:var(--ink)}
+  .tools{display:flex;gap:8px;flex-shrink:0}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:var(--muted)}
+  .btn.run{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:700;font-size:17px;padding:12px 22px}
+  .btn.run:hover{filter:brightness(1.08)}
+  .work{flex:1;display:grid;grid-template-columns:1.25fr 1fr;gap:18px;min-height:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .card .hd{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+  .card .hd .dots{display:flex;gap:6px}
+  .card .hd .dots i{width:10px;height:10px;border-radius:50%;background:#3A4052;display:block}
+  .hint{text-transform:none;letter-spacing:0;font-size:13px}
+  /* Editor (textarea sobre pre com cores) */
+  .editor{position:relative;flex:1;min-height:0}
+  .editor pre,.editor textarea{position:absolute;inset:0;margin:0;padding:18px 20px;font-family:"JetBrains Mono","Fira Code",Consolas,"Courier New",monospace;font-size:var(--fs);line-height:1.55;white-space:pre;overflow:auto;tab-size:2;border:0}
+  .editor pre{color:#E6E8EE;pointer-events:none}
+  .editor textarea{background:transparent;color:transparent;caret-color:var(--acc);resize:none;outline:none}
+  .editor textarea::selection{background:rgba(240,194,59,.28);color:transparent}
+  .k{color:var(--kw)} .s{color:var(--str)} .c{color:var(--com);font-style:italic} .d{color:var(--num)} .b{color:var(--bool)}
+  /* Saída */
+  .out{flex:1;overflow:auto;padding:14px 0;font-family:"JetBrains Mono",Consolas,monospace;font-size:var(--fs);line-height:1.5}
+  .out .ln{display:flex;gap:14px;padding:3px 20px;border-bottom:1px solid #262A37;animation:in .18s ease-out both}
+  .out .ln .i{color:#555C6E;min-width:2ch;text-align:right;user-select:none}
+  .out .ln.err{color:var(--err);background:rgba(255,122,122,.07)}
+  .out .ln.tip{color:var(--acc);font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  .out .empty{color:#5C6376;padding:6px 20px;font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  .status{padding:10px 16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);min-height:40px}
+  .status.ok{color:var(--ok)} .status.bad{color:var(--err)}
+  @keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .foot{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:14px}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px;color:var(--ink)}
+  .task{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+  .task .obj{margin:0}
+  .task-cols{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;align-items:start}
+  .lbl{margin:0 0 6px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);font-weight:700}
+  .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+  .expbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+  .expbox pre{margin:0;font-family:"JetBrains Mono",Consolas,monospace;font-size:calc(var(--fs) * .72);color:var(--ok);white-space:pre-wrap;max-height:180px;overflow:auto}
+  .out .ln.win{color:var(--ok);background:rgba(127,209,139,.08);font-family:"Segoe UI",Roboto,sans-serif;font-size:calc(var(--fs) * .8)}
+  @media (max-width:1000px){.task-cols{grid-template-columns:1fr}}
+  #mnav{display:none}
+  @media (max-width:1000px){
+    #mnav{display:block;width:100%;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:16px;margin-bottom:6px}
+    .hint{display:none}
+    .tools{flex-wrap:wrap}
+    .app{grid-template-columns:1fr;height:auto}
+    aside{display:none}
+    main{padding:18px 16px;overflow:visible}
+    .work{grid-template-columns:1fr}
+    .editor{min-height:320px}.out{min-height:200px}
+    .top{flex-direction:column}
+  }
+
+  :root{--acc:#F43F5E}
+  .nav.on{color:#FDA4AF}
+  .v{color:#7DD3FC}
+  .desc code,.try code{color:#FDA4AF}
+  .btn.run{background:#F43F5E;border-color:#F43F5E;color:#fff}
+  .btn.run:disabled{opacity:.6;cursor:wait}
+  .eyebrow{background:#F43F5E;color:#fff}
+  .expbox pre{color:var(--ok)}
+  .lbl{color:#FDA4AF}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <div class="num" style="color:#F43F5E">L4</div>
+      <div class="t">Laravel: banco de dados com Eloquent</div>
+      <div class="s">migrations, Eloquent, seeders e relacionamentos, com um SQLite de verdade no navegador</div><a href="/php-04/apostila-php-04.pdf" target="_blank" style="display:inline-block;margin-top:12px;font-size:13px;color:#15171E;background:#F43F5E;font-weight:600;padding:6px 12px;border-radius:8px;text-decoration:none">⬇ Apostila em PDF</a><a href="/#laravel" style="display:block;margin-top:10px;font-size:13px;color:#9AA0AE">← todas as aulas</a>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+
+  <main>
+    <select id="mnav" aria-label="Escolher exemplo"></select>
+    <div class="top">
+      <div>
+        <span class="eyebrow" id="grp"></span>
+        <h1 id="title"></h1>
+        <div class="desc" id="desc"></div>
+        <div class="try" id="try"></div>
+      </div>
+      <div class="tools">
+        <button class="btn" id="smaller" title="Diminuir fonte">A−</button>
+        <button class="btn" id="bigger" title="Aumentar fonte (projetor)">A+</button>
+        <button class="btn" id="reset" title="Voltar ao código original">↺ Restaurar</button>
+        <button class="btn run" id="run">▶ Executar</button>
+      </div>
+    </div>
+
+    <div class="work">
+      <div class="card">
+        <div class="hd"><span class="dots"><i></i><i></i><i></i></span><span>script.php · pode editar</span><span class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> executa</span></div>
+        <div class="editor">
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código PHP, Blade e Eloquent"></textarea>
+        </div>
+      </div>
+      <div class="card">
+        <div class="hd"><span>Saída do PHP</span><span style="display:flex;gap:6px"><button class="btn" id="aspage" style="padding:4px 10px;font-size:12px;text-transform:none;letter-spacing:0">🌐 ver como página</button><button class="btn" id="clear" style="padding:4px 10px;font-size:12px">limpar</button></span></div>
+        <iframe id="pageframe" hidden style="flex:1;width:100%;border:0;background:#fff;min-height:0" title="Saída como página"></iframe><div class="out" id="out"><div class="empty">Clique em ▶ Executar para ver o resultado aqui.</div></div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <button class="btn" id="prev">← Anterior</button>
+      <span id="pos"></span>
+      <button class="btn" id="next">Próximo →</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== EXEMPLOS =====================
+  Para criar um novo exemplo, copie um bloco <section class="ex"> abaixo.
+  data-group = grupo no menu | data-title = título | .desc = explicação | .try = desafio
+====================================================== -->
+<div id="examples" hidden>
+<section class="ex" data-kit="laravel" data-group="Banco de dados" data-title="O banco: tabelas, linhas e SQL">
+  <div class="desc">Até a L3 os dados moravam num array dentro do código: reiniciou, sumiu. Um <b>banco de dados</b> guarda os dados de verdade, organizados em <b>tabelas</b>: cada <b>coluna</b> é um campo (nome, horas) e cada <b>linha</b> é um registro (um curso). A língua para conversar com o banco é o <b>SQL</b>: <code>create table</code>, <code>insert</code>, <code>select</code>. O playground tem um banco <b>SQLite</b> de verdade, que nasce vazio a cada execução. Repare nos <code>?</code>: o valor vai separado do SQL, e é isso que protege contra <b>SQL injection</b>. No fim, o mesmo <code>select</code> com o <b>Query Builder</b> do Laravel, sem escrever SQL.</div>
+  <div class="try"><b>Experimente:</b> insira o curso <code>JavaScript</code> com 12 horas e mude o <code>where horas &gt;= ?</code> para mostrar só os cursos com <b>menos</b> de 12 horas.</div>
+<script type="text/x-code">
+<?php
+// 1. criar a tabela: colunas e o tipo de cada uma
+DB::statement("create table cursos (
+  id integer primary key autoincrement,
+  nome varchar not null,
+  horas integer
+)");
+
+// 2. inserir linhas: os valores vão separados, no lugar dos ?
+DB::insert("insert into cursos (nome, horas) values (?, ?)", ["HTML", 8]);
+DB::insert("insert into cursos (nome, horas) values (?, ?)", ["CSS", 10]);
+DB::insert("insert into cursos (nome, horas) values (?, ?)", ["Laravel", 15]);
+
+// 3. consultar: cada linha volta como um objeto
+$cursos = DB::select("select * from cursos where horas >= ? order by nome", [10]);
+foreach ($cursos as $curso) {
+  echo "$curso->id. $curso->nome ($curso->horas h)\n";
+}
+
+// o mesmo select com o Query Builder do Laravel
+$nomes = DB::table("cursos")->where("horas", ">=", 10)->orderBy("nome")->pluck("nome");
+echo "Query Builder: " . $nomes->implode(", ") . "\n";
+
+// a tabela inteira (ver_tabela é um ajudante do playground)
+ver_tabela("cursos");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Migrations" data-title="Sua primeira migration">
+  <div class="desc">No Laravel ninguém cria tabela com SQL na mão: a gente escreve uma <b>migration</b>, um arquivo PHP em <code>database/migrations</code> que descreve a tabela. Ela tem dois métodos: <code>up()</code> (o que fazer) e <code>down()</code> (como desfazer). Dentro do <code>Schema::create</code>, cada linha <code>$table-&gt;...</code> é uma coluna. Quem roda as migrations é o comando <code>php artisan migrate</code>; aqui, <code>artisan("migrate")</code>. O Laravel anota numa tabela chamada <code>migrations</code> o que já rodou: rodar de novo não repete nada. É assim que toda a equipe (e o servidor) chega no mesmo banco.</div>
+  <div class="try"><b>Experimente:</b> acrescente <code>$table-&gt;string("professor");</code> na migration e rode de novo: a coluna nova aparece na lista.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  // up(): o que a migration faz
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();               // id: número automático (1, 2, 3...)
+      $table->string("nome");     // texto curto
+      $table->integer("horas");   // número inteiro
+      $table->timestamps();       // created_at e updated_at
+    });
+  }
+
+  // down(): como desfazer
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+// no terminal: php artisan migrate
+artisan("migrate");
+
+echo "A tabela cursos existe? " . (Schema::hasTable("cursos") ? "sim" : "não") . "\n";
+echo "Colunas: " . implode(", ", Schema::getColumnListing("cursos")) . "\n";
+
+// rodar de novo não faz nada: ela já está anotada
+artisan("migrate");
+artisan("migrate:status");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Migrations" data-title="Tipos de coluna e modificadores">
+  <div class="desc">Cada coluna tem um <b>tipo</b>: <code>string</code> (texto curto), <code>text</code> (texto longo), <code>integer</code>, <code>decimal</code> (dinheiro), <code>boolean</code>, <code>date</code>, <code>enum</code> (uma lista fechada de opções). Depois do tipo vêm os <b>modificadores</b>: <code>-&gt;nullable()</code> deixa a coluna ficar vazia (<code>NULL</code>); <code>-&gt;default(0)</code> dá um valor quando ninguém manda; <code>-&gt;unique()</code> proíbe repetir. Sem modificador, a coluna é <b>obrigatória</b>. O <code>migrate --pretend</code> mostra o SQL que o Laravel vai mandar, sem rodar nada.</div>
+  <div class="try"><b>Experimente:</b> insira um terceiro aluno com o e-mail da Ana. Leia o erro: <code>UNIQUE constraint failed</code>. Depois tire o <code>"mensalidade"</code> de um insert e veja o <code>NOT NULL constraint failed</code>.</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_alunos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("alunos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");                          // obrigatório
+      $table->string("email")->unique();               // não pode repetir
+      $table->date("nascimento")->nullable();          // pode ficar vazio (NULL)
+      $table->decimal("mensalidade", 8, 2);            // dinheiro: 2 casas depois da vírgula
+      $table->integer("faltas")->default(0);           // se ninguém mandar, vale 0
+      $table->boolean("ativo")->default(true);         // verdadeiro ou falso (1 ou 0)
+      $table->enum("turno", ["manha", "tarde", "noite"])->default("manha");
+      $table->text("observacoes")->nullable();         // texto longo
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("alunos");
+  }
+});
+
+// --pretend: só mostra o SQL
+artisan("migrate --pretend");
+artisan("migrate");
+
+// a Ana manda só o obrigatório; o resto usa o padrão ou fica NULL
+DB::table("alunos")->insert(["nome" => "Ana", "email" => "ana@greenn.school", "mensalidade" => 150]);
+DB::table("alunos")->insert([
+  "nome" => "Caio", "email" => "caio@greenn.school", "mensalidade" => 150,
+  "nascimento" => "2008-03-15", "faltas" => 2, "turno" => "noite",
+]);
+
+ver_tabela("alunos", ["id", "nome", "nascimento", "faltas", "ativo", "turno"]);
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Migrations" data-title="Mudou de ideia? Nova migration e rollback">
+  <div class="desc">A tabela já está no ar e agora precisa de uma coluna nova. <b>Não edite a migration antiga</b> (no banco dos colegas e do servidor ela já rodou e não roda de novo): crie uma <b>migration nova</b> com <code>Schema::table</code>, que altera uma tabela existente. Como já existem alunos, a coluna nova precisa ser <code>-&gt;nullable()</code> ou ter um <code>-&gt;default()</code>. Errou? <code>migrate:rollback</code> roda o <code>down()</code> do último lote e desfaz. O <code>migrate:status</code> mostra o que já rodou (<code>Ran</code>) e o que falta (<code>Pending</code>).</div>
+  <div class="try"><b>Experimente:</b> tire o <code>-&gt;nullable()</code> do telefone e execute. Leia o erro: o SQLite não sabe o que colocar no telefone da Ana.</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_alunos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("alunos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("alunos");
+  }
+});
+
+artisan("migrate");
+DB::table("alunos")->insert(["nome" => "Ana"]);
+
+// uma semana depois: a escola quer o telefone. Migration NOVA:
+criar_migration("2026_11_21_000001_add_telefone_to_alunos_table", new class extends Migration {
+  public function up(): void {
+    Schema::table("alunos", function (Blueprint $table) {
+      $table->string("telefone")->nullable();   // a Ana já existe e não tem telefone
+    });
+  }
+
+  public function down(): void {
+    Schema::table("alunos", function (Blueprint $table) {
+      $table->dropColumn("telefone");
+    });
+  }
+});
+
+artisan("migrate:status");   // a nova está Pending
+artisan("migrate");
+echo "Colunas: " . implode(", ", Schema::getColumnListing("alunos")) . "\n";
+
+// desfaz o último lote (roda o down)
+artisan("migrate:rollback");
+echo "Colunas: " . implode(", ", Schema::getColumnListing("alunos")) . "\n";
+artisan("migrate:status");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Eloquent" data-title="O Model: uma classe para cada tabela">
+  <div class="desc">O <b>Eloquent</b> é o jeito do Laravel conversar com o banco usando classes (a L2 valendo a pena!). Cada tabela ganha um <b>Model</b> em <code>app/Models</code>: a classe <code>Curso</code> cuida da tabela <code>cursos</code>, e cada <b>objeto</b> Curso é <b>uma linha</b>. Com ele, <code>Curso::create([...])</code> faz o INSERT, <code>Curso::all()</code> traz todas as linhas e <code>Curso::find(3)</code> busca pelo id. As colunas viram propriedades: <code>$curso-&gt;nome</code>. O <code>$fillable</code> diz quais colunas o <code>create()</code> pode preencher (exemplo 08). O nome da tabela é <b>o da classe no plural, em inglês</b>: Curso → cursos funciona, mas Professor → <code>professors</code>. Nesse caso, diga o nome certo com <code>protected $table = "professores";</code>.</div>
+  <div class="try"><b>Experimente:</b> troque o <code>echo</code> do <code>Curso::find(3)</code> por <code>dump(Curso::find(3));</code> para ver o objeto inteiro, com <code>created_at</code> e <code>updated_at</code> preenchidos sozinhos.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->integer("horas")->default(0);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+artisan("migrate");
+
+// app/Models/Curso.php
+class Curso extends Model {
+  protected $fillable = ["nome", "horas"];   // colunas que o create() pode preencher
+}
+
+// create: o INSERT, sem SQL. Devolve o objeto já com o id
+$html = Curso::create(["nome" => "HTML", "horas" => 8]);
+echo "Criado: #$html->id $html->nome\n";
+Curso::create(["nome" => "CSS", "horas" => 10]);
+Curso::create(["nome" => "Laravel", "horas" => 15]);
+
+// ou: monta o objeto, preenche e salva
+$js = new Curso();
+$js->nome = "JavaScript";
+$js->horas = 12;
+$js->save();
+echo "Salvo: #$js->id $js->nome\n";
+
+// all: todas as linhas, cada uma é um objeto Curso
+foreach (Curso::all() as $curso) {
+  echo "- $curso->nome ($curso->horas h)\n";
+}
+
+// find: busca pelo id (ou devolve null)
+$curso = Curso::find(3);
+echo "O curso 3 é $curso->nome\n";
+echo "O curso 99 existe? " . (Curso::find(99) ? "sim" : "não") . "\n";
+
+// de onde veio o nome da tabela
+echo "Tabela do model: " . (new Curso())->getTable() . "\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Eloquent" data-title="Buscando: where, orderBy, first e count">
+  <div class="desc">O <code>where</code> filtra as linhas: <code>Aluno::where("media", "&gt;=", 7)</code>. Sem o operador, vale o <code>=</code>. Dá para encadear: <b>dois</b> <code>where</code> são "e"; <code>orWhere</code> é "ou". Depois vêm <code>orderBy</code> (ordem), <code>take</code> (só os N primeiros) e o método que <b>executa</b> a consulta: <code>get()</code> (a lista), <code>first()</code> (o primeiro ou <code>null</code>), <code>count()</code>, <code>avg()</code>, <code>max()</code> ou <code>pluck("nome")</code> (só uma coluna). Enquanto não chega nesse último método, nada foi ao banco: é só um SQL sendo montado (o <code>toSql()</code> mostra qual).</div>
+  <div class="try"><b>Experimente:</b> mostre os alunos da manhã em ordem alfabética, e quantos estão em recuperação (média de 5 até 7) com dois <code>where</code>.</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_alunos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("alunos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->string("turno");
+      $table->decimal("media", 4, 1);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("alunos");
+  }
+});
+artisan("migrate");
+
+class Aluno extends Model {
+  protected $fillable = ["nome", "turno", "media"];
+}
+
+Aluno::create(["nome" => "Ana", "turno" => "manha", "media" => 8]);
+Aluno::create(["nome" => "Bia", "turno" => "noite", "media" => 9.5]);
+Aluno::create(["nome" => "Caio", "turno" => "manha", "media" => 6]);
+Aluno::create(["nome" => "Davi", "turno" => "noite", "media" => 5.5]);
+Aluno::create(["nome" => "Eva", "turno" => "manha", "media" => 3.5]);
+
+// where + orderBy + get: a lista filtrada e ordenada
+$aprovados = Aluno::where("media", ">=", 7)->orderBy("media", "desc")->get();
+foreach ($aprovados as $aluno) {
+  echo "Aprovado(a): $aluno->nome ($aluno->media)\n";
+}
+
+// dois where = "e"   ·   orWhere = "ou"
+echo "Manhã e aprovados: " . Aluno::where("turno", "manha")->where("media", ">=", 7)->count() . "\n";
+echo "Ana ou Eva: " . Aluno::where("nome", "Ana")->orWhere("nome", "Eva")->count() . "\n";
+
+// first: só o primeiro
+$melhor = Aluno::orderByDesc("media")->first();
+echo "Maior média: $melhor->nome\n";
+
+// pluck, count e avg: o banco faz a conta
+echo "Noite: " . Aluno::where("turno", "noite")->pluck("nome")->implode(", ") . "\n";
+echo "Total: " . Aluno::count() . " alunos\n";
+echo "Média da turma: " . round(Aluno::avg("media"), 1) . "\n";
+echo "Top 3: " . Aluno::orderByDesc("media")->take(3)->pluck("nome")->implode(", ") . "\n";
+
+// por dentro: o SQL montado (os valores vão nos ?)
+echo Aluno::where("media", ">=", 7)->orderBy("nome")->toSql() . "\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Eloquent" data-title="Atualizar e apagar">
+  <div class="desc">Para <b>alterar</b> uma linha: busque o objeto, mude a propriedade e chame <code>save()</code>; ou use <code>update([...])</code>, que muda e salva de uma vez. O Eloquent só manda para o banco as colunas que mudaram, e atualiza o <code>updated_at</code> sozinho. Para <b>apagar</b>: <code>$tarefa-&gt;delete()</code>, ou <code>Tarefa::destroy(3)</code> direto pelo id. Um <code>where(...)-&gt;update([...])</code> ou <code>where(...)-&gt;delete()</code> mexe em <b>várias linhas</b> com um comando só. Cuidado: sem <code>where</code>, mexe em <b>todas</b>! O <code>$casts</code> converte a coluna quando ela sai do banco: <code>feita</code> volta como <code>true</code>/<code>false</code>, não 1/0.</div>
+  <div class="try"><b>Experimente:</b> marque todas as tarefas como feitas com <b>um</b> comando: <code>Tarefa::where("feita", false)-&gt;update(["feita" =&gt; true]);</code>.</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_tarefas_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("tarefas", function (Blueprint $table) {
+      $table->id();
+      $table->string("titulo");
+      $table->boolean("feita")->default(false);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("tarefas");
+  }
+});
+artisan("migrate");
+
+class Tarefa extends Model {
+  protected $fillable = ["titulo", "feita"];
+  protected $casts = ["feita" => "boolean"];   // 1/0 do banco vira true/false
+}
+
+Tarefa::create(["titulo" => "Estudar migrations"]);
+Tarefa::create(["titulo" => "Fazer os exercícios"]);
+Tarefa::create(["titulo" => "Maratonar série"]);
+Tarefa::create(["titulo" => "Revisar Blade"]);
+
+// jeito 1: busca, muda e save()
+$tarefa = Tarefa::find(1);
+$tarefa->feita = true;
+$tarefa->save();
+
+// jeito 2: update() muda e salva de uma vez
+Tarefa::find(4)->update(["titulo" => "Revisar Blade e rotas", "feita" => true]);
+
+// apagar: pelo objeto ou direto pelo id
+Tarefa::where("titulo", "Maratonar série")->first()->delete();
+// Tarefa::destroy(3);   // faria o mesmo
+
+foreach (Tarefa::all() as $t) {
+  echo ($t->feita ? "[x] " : "[ ] ") . $t->titulo . "\n";
+}
+echo "Faltam: " . Tarefa::where("feita", false)->count() . "\n";
+
+// várias de uma vez: apaga todas as feitas
+$apagadas = Tarefa::where("feita", true)->delete();
+echo "Limpei $apagadas tarefas feitas\n";
+ver_tabela("tarefas", ["id", "titulo", "feita"]);
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Eloquent" data-title="$fillable: a proteção do create()">
+  <div class="desc">O <code>create($dados)</code> é perigoso se os dados vêm direto de um formulário: alguém pode acrescentar <code>admin=1</code> no HTML e virar administrador. Esse ataque se chama <b>mass assignment</b>. Por isso o Laravel <b>bloqueia tudo</b> até você listar no <code>$fillable</code> o que o <code>create()</code>/<code>update()</code> pode preencher. O que estiver fora da lista é <b>ignorado sem aviso</b>, então vale conferir quando um campo "não salva". Colunas sensíveis (como <code>admin</code>) você preenche de propósito, uma por uma: <code>$usuario-&gt;admin = true;</code>. Existe o contrário, <code>$guarded = []</code> (libera tudo), mas use com cuidado.</div>
+  <div class="try"><b>Experimente:</b> acrescente <code>"admin"</code> ao <code>$fillable</code> do <code>Usuario</code> e rode: o hacker vira admin. Por isso ela não deve estar lá.</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_usuarios_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("usuarios", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->string("email");
+      $table->boolean("admin")->default(false);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("usuarios");
+  }
+});
+artisan("migrate");
+
+// 1. um model SEM $fillable: o create() é bloqueado
+class Visitante extends Model {
+  protected $table = "usuarios";
+}
+try {
+  Visitante::create(["nome" => "Ana", "email" => "ana@greenn.school"]);
+} catch (MassAssignmentException $erro) {
+  echo "Bloqueado: " . $erro->getMessage() . "\n";
+}
+
+// 2. o model certo: só nome e email são liberados
+class Usuario extends Model {
+  protected $fillable = ["nome", "email"];
+  protected $casts = ["admin" => "boolean"];
+}
+
+// o que chegou do formulário de cadastro (alguém colocou admin no HTML)
+$dadosDoFormulario = ["nome" => "Hacker", "email" => "h@x.com", "admin" => true];
+$hacker = Usuario::create($dadosDoFormulario);
+echo "$hacker->nome é admin? " . ($hacker->fresh()->admin ? "sim" : "não") . "\n";
+
+// 3. virar admin é uma decisão do sistema: atribuição uma por uma
+$ana = Usuario::create(["nome" => "Ana", "email" => "ana@greenn.school"]);
+$ana->admin = true;
+$ana->save();
+echo "$ana->nome é admin? " . ($ana->fresh()->admin ? "sim" : "não") . "\n";
+
+ver_tabela("usuarios", ["id", "nome", "admin"]);
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Eloquent" data-title="Seeders: o banco já nasce com dados">
+  <div class="desc">Toda vez que alguém instala o projeto, o banco começa vazio. Um <b>seeder</b> (de <i>seed</i>, semente) é uma classe em <code>database/seeders</code> com um método <code>run()</code> que cadastra dados iniciais: os cursos, um usuário de teste. O <code>DatabaseSeeder</code> é o principal e chama os outros com <code>$this-&gt;call(...)</code>. Rode com <code>php artisan db:seed</code>. No seu computador, <code>migrate:fresh --seed</code> <b>apaga todas as tabelas</b>, roda as migrations do zero e semeia de novo: ótimo para recomeçar limpo, <b>proibido em produção</b> (apaga os dados reais).</div>
+  <div class="try"><b>Experimente:</b> crie um <code>AlunoSeeder</code> (com a migration e o model) e coloque no <code>call([CursoSeeder::class, AlunoSeeder::class])</code>.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->integer("horas")->default(0);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+class Curso extends Model {
+  protected $fillable = ["nome", "horas"];
+}
+
+// database/seeders/CursoSeeder.php
+class CursoSeeder extends Seeder {
+  public function run(): void {
+    $cursos = ["HTML" => 8, "CSS" => 10, "JavaScript" => 12, "Laravel" => 15];
+    foreach ($cursos as $nome => $horas) {
+      Curso::create(["nome" => $nome, "horas" => $horas]);
+    }
+  }
+}
+
+// database/seeders/DatabaseSeeder.php: o principal chama os outros
+class DatabaseSeeder extends Seeder {
+  public function run(): void {
+    $this->call(CursoSeeder::class);
+  }
+}
+
+artisan("migrate");
+artisan("db:seed");
+echo Curso::count() . " cursos: " . Curso::pluck("nome")->implode(", ") . "\n";
+
+// bagunçou o banco testando?
+Curso::create(["nome" => "teste123"]);
+Curso::create(["nome" => "asdf"]);
+echo "Antes: " . Curso::count() . " cursos\n";
+
+// apaga tudo, recria e semeia (só no seu computador!)
+artisan("migrate:fresh --seed");
+echo "Depois: " . Curso::count() . " cursos\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Eloquent" data-title="Relacionamentos: hasMany e belongsTo">
+  <div class="desc">Um curso <b>tem muitas</b> aulas; uma aula <b>pertence a</b> um curso. No banco, quem guarda essa ligação é a <b>chave estrangeira</b>: a coluna <code>curso_id</code> na tabela <code>aulas</code>, criada com <code>foreignId("curso_id")-&gt;constrained()</code>. O banco recusa um <code>curso_id</code> que não existe, e o <code>cascadeOnDelete()</code> apaga as aulas junto com o curso. No Model, cada lado vira um método: <code>hasMany(Aula::class)</code> no Curso e <code>belongsTo(Curso::class)</code> na Aula. Repare na diferença: <code>$curso-&gt;aulas</code> (sem parênteses) é a <b>lista</b> pronta; <code>$curso-&gt;aulas()</code> (com parênteses) é uma <b>consulta</b> para continuar (<code>-&gt;where</code>, <code>-&gt;count()</code>, <code>-&gt;create()</code>).</div>
+  <div class="try"><b>Experimente:</b> cadastre o curso <code>CSS</code> com duas aulas pelo <code>$css-&gt;aulas()-&gt;create(...)</code> e mostre <code>"A aula X é do curso Y"</code> para uma delas.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+// database/migrations/2026_11_14_000002_create_aulas_table.php
+criar_migration("2026_11_14_000002_create_aulas_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("aulas", function (Blueprint $table) {
+      $table->id();
+      $table->foreignId("curso_id")->constrained()->cascadeOnDelete();   // aponta para cursos.id
+      $table->string("titulo");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("aulas");
+  }
+});
+artisan("migrate");
+
+// app/Models/Curso.php
+class Curso extends Model {
+  protected $fillable = ["nome"];
+
+  // um curso TEM MUITAS aulas (aulas.curso_id = cursos.id)
+  public function aulas() {
+    return $this->hasMany(Aula::class);
+  }
+}
+
+// app/Models/Aula.php
+class Aula extends Model {
+  protected $fillable = ["titulo"];
+
+  // uma aula PERTENCE A um curso
+  public function curso() {
+    return $this->belongsTo(Curso::class);
+  }
+}
+
+$laravel = Curso::create(["nome" => "Laravel"]);
+$html = Curso::create(["nome" => "HTML"]);
+
+// criar pelo relacionamento: o curso_id é preenchido sozinho
+$laravel->aulas()->create(["titulo" => "PHP: o básico"]);
+$laravel->aulas()->create(["titulo" => "Classes e objetos"]);
+$laravel->aulas()->create(["titulo" => "Rotas e Blade"]);
+$laravel->aulas()->create(["titulo" => "Banco de dados"]);
+$html->aulas()->create(["titulo" => "Estrutura da página"]);
+
+// $curso->aulas: a lista
+echo "$laravel->nome tem " . $laravel->aulas->count() . " aulas:\n";
+foreach ($laravel->aulas as $aula) {
+  echo "  - $aula->titulo\n";
+}
+
+// $curso->aulas(): uma consulta para continuar
+echo "Aulas com \"Blade\": " . $laravel->aulas()->where("titulo", "like", "%Blade%")->count() . "\n";
+
+// o outro lado: da aula para o curso
+$aula = Aula::find(5);
+echo "A aula \"$aula->titulo\" é do curso {$aula->curso->nome}\n";
+
+// a chave estrangeira protege: curso 99 não existe
+try {
+  DB::table("aulas")->insert(["curso_id" => 99, "titulo" => "Aula perdida"]);
+} catch (QueryException $erro) {
+  echo "Recusado: FOREIGN KEY constraint failed\n";
+}
+
+// cascadeOnDelete: apagar o curso apaga as aulas dele
+$html->delete();
+echo "Aulas no banco: " . Aula::count() . "\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Por dentro" data-title="O SQL por trás do Eloquent (e o N+1)">
+  <div class="desc">O Eloquent escreve o SQL por você, mas vale espiar: o <code>DB::listen</code> roda uma função a cada consulta que vai para o banco. Repare na primeira listagem: <b>uma</b> consulta para os cursos e <b>mais uma para cada curso</b> (as aulas dele). Com 3 cursos são 4 consultas; com 500 cursos, 501. Esse é o famoso problema <b>N+1</b>, a causa mais comum de página lenta em Laravel. A correção é avisar antes que você vai usar as aulas: <code>Curso::with("aulas")-&gt;get()</code> busca as aulas de <b>todos</b> os cursos numa consulta só. São 2 consultas, não importa quantos cursos existam.</div>
+  <div class="try"><b>Experimente:</b> cadastre mais 3 cursos no laço do começo (mude o array) e compare de novo o total de consultas com e sem <code>with</code>.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+// database/migrations/2026_11_14_000002_create_aulas_table.php
+criar_migration("2026_11_14_000002_create_aulas_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("aulas", function (Blueprint $table) {
+      $table->id();
+      $table->foreignId("curso_id")->constrained()->cascadeOnDelete();   // aponta para cursos.id
+      $table->string("titulo");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("aulas");
+  }
+});
+artisan("migrate");
+
+class Curso extends Model {
+  protected $fillable = ["nome"];
+  public function aulas() { return $this->hasMany(Aula::class); }
+}
+
+class Aula extends Model {
+  protected $fillable = ["titulo"];
+}
+
+foreach (["HTML", "CSS", "Laravel"] as $nome) {
+  $curso = Curso::create(["nome" => $nome]);
+  $curso->aulas()->create(["titulo" => "Aula 1 de $nome"]);
+  $curso->aulas()->create(["titulo" => "Aula 2 de $nome"]);
+}
+
+// daqui para baixo, cada SQL aparece na tela
+$consultas = 0;
+DB::listen(function ($query) use (&$consultas) {
+  $consultas++;
+  echo "   SQL: " . $query->toRawSql() . "\n";
+});
+
+echo "SEM with():\n";
+foreach (Curso::all() as $curso) {
+  echo "$curso->nome: " . $curso->aulas->count() . " aulas\n";
+}
+echo "Total: $consultas consultas\n";
+
+$consultas = 0;
+echo "COM with(\"aulas\"):\n";
+foreach (Curso::with("aulas")->get() as $curso) {
+  echo "$curso->nome: " . $curso->aulas->count() . " aulas\n";
+}
+echo "Total: $consultas consultas\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Juntando tudo" data-title="Projeto da aula: o site da escola com banco">
+  <div class="desc">O site da escola da L3, agora com os cursos vindo do <b>banco</b>: migrations criam as tabelas, um seeder cadastra os cursos e as aulas, os Models fazem as consultas e o controller entrega para as views em Blade. Repare no <code>findOrFail($id)</code>: se o curso não existe, o Laravel responde <b>404</b> sozinho, sem precisar do <code>if</code> com <code>abort(404)</code> da L3. E o <code>with("aulas")</code> já evita o N+1 na lista. Clique em <b>🌐 ver como página</b> para ver o HTML.</div>
+  <div class="try"><b>Experimente:</b> no seeder, crie o curso <code>JavaScript</code> sem aulas e visite a página dele: o <code>@forelse</code> mostra "Aulas em breve".</div>
+<script type="text/x-code">
+<?php
+// ---------- database/migrations ----------
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->text("descricao")->nullable();
+      $table->timestamps();
+    });
+  }
+  public function down(): void { Schema::dropIfExists("cursos"); }
+});
+
+criar_migration("2026_11_14_000002_create_aulas_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("aulas", function (Blueprint $table) {
+      $table->id();
+      $table->foreignId("curso_id")->constrained()->cascadeOnDelete();
+      $table->string("titulo");
+      $table->timestamps();
+    });
+  }
+  public function down(): void { Schema::dropIfExists("aulas"); }
+});
+
+// ---------- app/Models ----------
+class Curso extends Model {
+  protected $fillable = ["nome", "descricao"];
+  public function aulas() { return $this->hasMany(Aula::class); }
+}
+
+class Aula extends Model {
+  protected $fillable = ["titulo"];
+  public function curso() { return $this->belongsTo(Curso::class); }
+}
+
+// ---------- database/seeders/DatabaseSeeder.php ----------
+class DatabaseSeeder extends Seeder {
+  public function run(): void {
+    $html = Curso::create(["nome" => "HTML", "descricao" => "A estrutura de toda página."]);
+    $html->aulas()->create(["titulo" => "Estrutura"]);
+    $html->aulas()->create(["titulo" => "Formulários"]);
+
+    $laravel = Curso::create(["nome" => "Laravel"]);
+    foreach (["PHP: o básico", "Classes e objetos", "Rotas e Blade", "Banco de dados"] as $titulo) {
+      $laravel->aulas()->create(["titulo" => $titulo]);
+    }
+  }
+}
+
+// no terminal: php artisan migrate --seed
+artisan("migrate --seed");
+
+// ---------- resources/views ----------
+criar_view("layouts.app", <<<'BLADE'
+<nav>🌱 Greenn School · <a href="{{ route('cursos.index') }}">Cursos</a></nav>
+<main>
+@yield('conteudo')
+</main>
+BLADE);
+
+criar_view("cursos.index", <<<'BLADE'
+@extends('layouts.app')
+@section('conteudo')
+  <h1>Nossos cursos</h1>
+  <ul>
+  @foreach ($cursos as $curso)
+    <li><a href="{{ route('cursos.show', $curso->id) }}">{{ $curso->nome }}</a> · {{ $curso->aulas->count() }} aulas</li>
+  @endforeach
+  </ul>
+@endsection
+BLADE);
+
+criar_view("cursos.show", <<<'BLADE'
+@extends('layouts.app')
+@section('conteudo')
+  <h1>{{ $curso->nome }}</h1>
+  <p>{{ $curso->descricao ?? 'Sem descrição.' }}</p>
+  <ol>
+  @forelse ($curso->aulas as $aula)
+    <li>{{ $aula->titulo }}</li>
+  @empty
+    <li>Aulas em breve</li>
+  @endforelse
+  </ol>
+@endsection
+BLADE);
+
+// ---------- app/Http/Controllers/CursoController.php ----------
+class CursoController extends Controller {
+  public function index() {
+    $cursos = Curso::with("aulas")->orderBy("nome")->get();
+    return view("cursos.index", ["cursos" => $cursos]);
+  }
+
+  public function show(string $id) {
+    $curso = Curso::findOrFail($id);   // não achou? 404
+    return view("cursos.show", ["curso" => $curso]);
+  }
+}
+
+// ---------- routes/web.php ----------
+Route::get("/cursos", [CursoController::class, "index"])->name("cursos.index");
+Route::get("/cursos/{id}", [CursoController::class, "show"])->whereNumber("id")->name("cursos.show");
+
+visitar("/cursos");
+visitar("/cursos/2");
+visitar("/cursos/9");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Livre" data-title="Área livre">
+  <div class="desc">Um script para testar o que quiser. Está tudo carregado: rotas e Blade da L3, <code>criar_migration</code>, <code>Schema</code>, <code>artisan()</code>, <code>DB</code>, <code>Model</code>, <code>Seeder</code>, <code>ver_tabela()</code> e o <code>dd</code>. Lembre: o banco nasce vazio a cada execução, então a migration e os dados vêm antes das consultas.</div>
+  <div class="try"><b>Dica:</b> <code>dump(Livro::all());</code> mostra a lista inteira; <code>ver_tabela("livros")</code> mostra como tabela.</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_livros_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("livros", function (Blueprint $table) {
+      $table->id();
+      $table->string("titulo");
+      $table->timestamps();
+    });
+  }
+});
+artisan("migrate");
+
+class Livro extends Model {
+  protected $fillable = ["titulo"];
+}
+
+Livro::create(["titulo" => "Dom Casmurro"]);
+ver_tabela("livros");
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 01 · Sua primeira migration" data-expect="[&quot;Colunas: id, nome, email, created_at, updated_at&quot;, &quot;E-mail repetido: bloqueado&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Escrever uma migration com Schema::create e rodar com artisan.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Complete o <code>up()</code> da migration <code>create_alunos_table</code> com as colunas <code>id</code>, <code>nome</code> (texto), <code>email</code> (texto, <b>sem repetir</b>) e os <code>timestamps</code>.</li><li>Complete o <code>down()</code> para apagar a tabela.</li><li>A conferência roda o <code>migrate</code>, lista as colunas e tenta cadastrar o mesmo e-mail duas vezes.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Colunas: id, nome, email, created_at, updated_at<br>E-mail repetido: bloqueado</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Acrescente <code>$table-&gt;date("nascimento")-&gt;nullable();</code> e veja a coluna nova na lista.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_alunos_table.php
+criar_migration("2026_11_14_000001_create_alunos_table", new class extends Migration {
+  public function up(): void {
+    // Schema::create("alunos", function (Blueprint $table) { ... });
+  }
+
+  public function down(): void {
+    // apague a tabela
+  }
+});
+
+// a conferência (não precisa mexer)
+artisan("migrate");
+echo "Colunas: " . implode(", ", Schema::getColumnListing("alunos")) . "\n";
+try {
+  DB::table("alunos")->insert(["nome" => "Ana", "email" => "ana@greenn.school"]);
+  DB::table("alunos")->insert(["nome" => "Ana Paula", "email" => "ana@greenn.school"]);
+  echo "Opa: o banco aceitou um e-mail repetido\n";
+} catch (QueryException $erro) {
+  echo str_contains($erro->getMessage(), "UNIQUE") ? "E-mail repetido: bloqueado\n" : $erro->getMessage() . "\n";
+}
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 02 · Tipos e valores padrão" data-expect="[&quot;| 1  | Caneca   | 25.9  | 0       | NULL      | 1     |&quot;, &quot;| 2  | Camiseta | 59.9  | 12      | Algodão   | 1     |&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Escolher o tipo de cada coluna e usar nullable e default.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie a migration da tabela <code>produtos</code>: <code>nome</code> (texto), <code>preco</code> (dinheiro, 8 dígitos e 2 casas), <code>estoque</code> (inteiro, padrão <code>0</code>), <code>descricao</code> (texto longo, <b>pode ficar vazio</b>), <code>ativo</code> (verdadeiro/falso, padrão <code>true</code>) e os timestamps.</li><li>A conferência cadastra a Caneca mandando só <code>nome</code> e <code>preco</code>: o resto precisa sair sozinho.</li><li>Compare a tabela com a saída esperada.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>produtos (2 linhas)<br>+----+----------+-------+---------+-----------+-------+<br>| id | nome     | preco | estoque | descricao | ativo |<br>+----+----------+-------+---------+-----------+-------+<br>| 1  | Caneca   | 25.9  | 0       | NULL      | 1     |<br>| 2  | Camiseta | 59.9  | 12      | Algodão   | 1     |<br>+----+----------+-------+---------+-----------+-------+</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Tire o <code>-&gt;nullable()</code> da descrição e execute: qual erro aparece e por quê?</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_produtos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("produtos", function (Blueprint $table) {
+      $table->id();
+      // nome, preco, estoque, descricao e ativo
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("produtos");
+  }
+});
+
+// a conferência (não precisa mexer)
+artisan("migrate");
+DB::table("produtos")->insert(["nome" => "Caneca", "preco" => 25.9]);
+DB::table("produtos")->insert(["nome" => "Camiseta", "preco" => 59.9, "estoque" => 12, "descricao" => "Algodão"]);
+ver_tabela("produtos", ["id", "nome", "preco", "estoque", "descricao", "ativo"]);
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 03 · Leia o erro do banco" data-expect="[&quot;Bia: JavaScript&quot;, &quot;Walter: Laravel&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Encontrar a causa de três erros do banco lendo as mensagens.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>O código tem <b>3 erros</b>. Execute, leia a mensagem (a parte depois de <code>General error</code> ou <code>constraint failed</code>), corrija e execute de novo.</li><li>Pistas: o Laravel chuta o nome da tabela em <b>inglês</b>; nem todo professor tem bio; e confira os nomes das colunas.</li><li>Não mude os dados nem a ordem da listagem: corrija só a migration e o model.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Bia: JavaScript<br>Walter: Laravel</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Troque o <code>orderBy("nome")</code> por <code>orderByDesc("nome")</code>. Qual vem primeiro agora?</div>
+<script type="text/x-code">
+<?php
+criar_migration("2026_11_14_000001_create_professores_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("professores", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->string("materia");
+      $table->text("bio");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("professores");
+  }
+});
+artisan("migrate");
+
+class Professor extends Model {
+  protected $fillable = ["nome", "materia", "bio"];
+}
+
+Professor::create(["nome" => "Walter", "materia" => "Laravel", "bio" => "Professor da Greenn School"]);
+Professor::create(["nome" => "Bia", "materia" => "JavaScript"]);
+
+foreach (Professor::orderBy("nmoe")->get() as $professor) {
+  echo "$professor->nome: $professor->materia\n";
+}
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 04 · Seu primeiro Model" data-expect="[&quot;3 livros cadastrados&quot;, &quot;1. Dom Casmurro (Machado de Assis)&quot;, &quot;2. Capitães da Areia (Jorge Amado)&quot;, &quot;3. O Cortiço (Aluísio Azevedo)&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar um Model com $fillable, cadastrar com create() e listar com all().</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>A migration de <code>livros</code> está pronta. Crie a classe <code>Livro</code> que estende <code>Model</code>, com <code>titulo</code> e <code>autor</code> no <code>$fillable</code>.</li><li>Cadastre com <code>Livro::create</code>: <i>Dom Casmurro</i> (Machado de Assis), <i>Capitães da Areia</i> (Jorge Amado) e <i>O Cortiço</i> (Aluísio Azevedo).</li><li>Mostre o total com <code>Livro::count()</code> e cada livro com um <code>foreach</code> no <code>Livro::all()</code>, no formato da saída esperada.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>3 livros cadastrados<br>1. Dom Casmurro (Machado de Assis)<br>2. Capitães da Areia (Jorge Amado)<br>3. O Cortiço (Aluísio Azevedo)</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Mostre só o livro 2 com <code>Livro::find(2)</code>.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_livros_table.php
+criar_migration("2026_11_14_000001_create_livros_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("livros", function (Blueprint $table) {
+      $table->id();
+      $table->string("titulo");
+      $table->string("autor");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("livros");
+  }
+});
+artisan("migrate");
+
+// app/Models/Livro.php
+// crie a classe aqui
+
+// cadastre os 3 livros
+
+// mostre o total e a lista
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 05 · Consultas com where e orderBy" data-expect="[&quot;Bia: 9.5&quot;, &quot;Ana: 8&quot;, &quot;Recuperação: 2 alunos&quot;, &quot;Média da turma: 6.5&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Filtrar, ordenar e contar com o Eloquent.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Mostre os aprovados (média 7 ou mais) da <b>maior</b> para a menor média, no formato <code>Bia: 9.5</code>.</li><li>Mostre quantos estão em <b>recuperação</b> (média de 5 até menos de 7), com dois <code>where</code> e <code>count()</code>.</li><li>Mostre a média da turma com <code>Aluno::avg("media")</code>, arredondada com <code>round(..., 1)</code>.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Bia: 9.5<br>Ana: 8<br>Recuperação: 2 alunos<br>Média da turma: 6.5</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Mostre o nome de quem tirou a menor nota com <code>orderBy("media")-&gt;first()</code>.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_alunos_table.php
+criar_migration("2026_11_14_000001_create_alunos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("alunos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->decimal("media", 4, 1);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("alunos");
+  }
+});
+artisan("migrate");
+
+class Aluno extends Model {
+  protected $fillable = ["nome", "media"];
+}
+
+Aluno::create(["nome" => "Ana", "media" => 8]);
+Aluno::create(["nome" => "Bia", "media" => 9.5]);
+Aluno::create(["nome" => "Caio", "media" => 6]);
+Aluno::create(["nome" => "Davi", "media" => 5.5]);
+Aluno::create(["nome" => "Eva", "media" => 3.5]);
+
+// 1. aprovados, da maior para a menor média
+
+// 2. quantos em recuperação
+
+// 3. média da turma
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 06 · Mass assignment: previsão e correção" data-expect="[&quot;Hacker é admin? não&quot;, &quot;Bia é admin? sim&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Entender o risco do create() com dados do formulário e corrigir o model.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li><b>Antes de executar</b>, escreva num papel: o Hacker vai virar admin?</li><li>Execute. O model usa <code>$guarded = []</code>, que libera <b>todas</b> as colunas para o <code>create()</code>, inclusive <code>admin</code>.</li><li>Corrija o model com um <code>$fillable</code> que libere só o <code>nome</code>. A Bia continua admin, porque o sistema preenche essa coluna de propósito.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Hacker é admin? não<br>Bia é admin? sim</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Mande <code>"nome" =&gt; "Hacker", "id" =&gt; 50</code> no formulário. O id 50 é usado? Por quê?</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_usuarios_table.php
+criar_migration("2026_11_14_000001_create_usuarios_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("usuarios", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->boolean("admin")->default(false);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("usuarios");
+  }
+});
+artisan("migrate");
+
+class Usuario extends Model {
+  protected $guarded = [];   // libera tudo
+  protected $casts = ["admin" => "boolean"];
+}
+
+// veio do formulário de cadastro (alguém colocou admin no HTML)
+$formulario = ["nome" => "Hacker", "admin" => true];
+$hacker = Usuario::create($formulario);
+
+// o sistema decide quem é admin
+$bia = Usuario::create(["nome" => "Bia"]);
+$bia->admin = true;
+$bia->save();
+
+foreach (Usuario::all() as $u) {
+  echo "$u->nome é admin? " . ($u->admin ? "sim" : "não") . "\n";
+}
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 07 · Atualizar e apagar" data-expect="[&quot;[x] Estudar migrations&quot;, &quot;[ ] Fazer os 10 exercícios&quot;, &quot;[ ] Revisar Blade&quot;, &quot;Total: 3 tarefas&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Alterar e apagar linhas com save(), update() e delete().</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Marque a tarefa <code>Estudar migrations</code> como feita: busque com <code>where(...)-&gt;first()</code>, mude <code>feita</code> e salve.</li><li>Mude o título da tarefa 2 para <code>Fazer os 10 exercícios</code> com <code>update([...])</code>.</li><li>Apague a tarefa <code>Maratonar série</code>. A listagem no fim já está pronta.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>[x] Estudar migrations<br>[ ] Fazer os 10 exercícios<br>[ ] Revisar Blade<br>Total: 3 tarefas</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Marque <b>todas</b> como feitas com um comando só: <code>Tarefa::where("feita", false)-&gt;update([...])</code>.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_tarefas_table.php
+criar_migration("2026_11_14_000001_create_tarefas_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("tarefas", function (Blueprint $table) {
+      $table->id();
+      $table->string("titulo");
+      $table->boolean("feita")->default(false);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("tarefas");
+  }
+});
+artisan("migrate");
+
+class Tarefa extends Model {
+  protected $fillable = ["titulo", "feita"];
+  protected $casts = ["feita" => "boolean"];
+}
+
+Tarefa::create(["titulo" => "Estudar migrations"]);
+Tarefa::create(["titulo" => "Fazer os exercícios"]);
+Tarefa::create(["titulo" => "Maratonar série"]);
+Tarefa::create(["titulo" => "Revisar Blade"]);
+
+// 1. marque "Estudar migrations" como feita
+
+// 2. mude o título da tarefa 2
+
+// 3. apague "Maratonar série"
+
+// a listagem (não precisa mexer)
+foreach (Tarefa::all() as $t) {
+  echo ($t->feita ? "[x] " : "[ ] ") . $t->titulo . "\n";
+}
+echo "Total: " . Tarefa::count() . " tarefas\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 08 · O seeder da escola" data-expect="[&quot;3 cursos no banco: HTML, CSS, Laravel&quot;, &quot;Total de horas: 33&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar seeders e rodar com db:seed.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Crie o <code>CursoSeeder</code> (estende <code>Seeder</code>), cujo <code>run()</code> cadastra <code>HTML</code> (8 horas), <code>CSS</code> (10) e <code>Laravel</code> (15).</li><li>Crie o <code>DatabaseSeeder</code>, cujo <code>run()</code> chama o <code>CursoSeeder</code> com <code>$this-&gt;call(...)</code>.</li><li>A conferência roda <code>migrate --seed</code> e lista os cursos.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>3 cursos no banco: HTML, CSS, Laravel<br>Total de horas: 33</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Rode <code>artisan("migrate:fresh --seed")</code> duas vezes seguidas no fim: o total continua 3? E com <code>db:seed</code> duas vezes?</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->integer("horas")->default(0);
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+class Curso extends Model {
+  protected $fillable = ["nome", "horas"];
+}
+
+// database/seeders/CursoSeeder.php
+
+// database/seeders/DatabaseSeeder.php
+
+// a conferência (não precisa mexer)
+artisan("migrate --seed");
+echo Curso::count() . " cursos no banco: " . Curso::pluck("nome")->implode(", ") . "\n";
+echo "Total de horas: " . Curso::sum("horas") . "\n";
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 09 · Curso tem muitas aulas" data-expect="[&quot;Laravel tem 3 aulas:&quot;, &quot;- Rotas&quot;, &quot;- Blade&quot;, &quot;- Banco de dados&quot;, &quot;A aula Blade é do curso Laravel&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Criar o relacionamento hasMany / belongsTo e usar dos dois lados.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>No <code>Curso</code>, crie o método <code>aulas()</code> que devolve <code>$this-&gt;hasMany(Aula::class)</code>. Na <code>Aula</code>, o método <code>curso()</code> com <code>belongsTo</code>.</li><li>Cadastre as aulas <code>Rotas</code>, <code>Blade</code> e <code>Banco de dados</code> pelo relacionamento: <code>$laravel-&gt;aulas()-&gt;create([...])</code>.</li><li>Mostre o total e a lista com <code>$laravel-&gt;aulas</code> e, a partir da aula 2, o nome do curso dela.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>Laravel tem 3 aulas:<br>- Rotas<br>- Blade<br>- Banco de dados<br>A aula Blade é do curso Laravel</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Apague o curso com <code>$laravel-&gt;delete()</code> e mostre <code>Aula::count()</code>. Por que deu 0?</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+// database/migrations/2026_11_14_000002_create_aulas_table.php
+criar_migration("2026_11_14_000002_create_aulas_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("aulas", function (Blueprint $table) {
+      $table->id();
+      $table->foreignId("curso_id")->constrained()->cascadeOnDelete();
+      $table->string("titulo");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("aulas");
+  }
+});
+artisan("migrate");
+
+class Curso extends Model {
+  protected $fillable = ["nome"];
+  // aulas(): hasMany
+}
+
+class Aula extends Model {
+  protected $fillable = ["titulo"];
+  // curso(): belongsTo
+}
+
+$laravel = Curso::create(["nome" => "Laravel"]);
+// cadastre as 3 aulas pelo relacionamento
+
+// mostre "Laravel tem 3 aulas:" e a lista
+
+// a aula 2 e o curso dela
+</script>
+</section>
+
+<section class="ex" data-kit="laravel" data-group="Exercícios" data-title="Ex 10 · Desafio: catálogo do banco" data-expect="[&quot;&lt;li&gt;&lt;a href=\&quot;/cursos/2\&quot;&gt;CSS&lt;/a&gt; (1 aulas)&lt;/li&gt;&quot;, &quot;&lt;li&gt;&lt;a href=\&quot;/cursos/1\&quot;&gt;Laravel&lt;/a&gt; (2 aulas)&lt;/li&gt;&quot;, &quot;&lt;h1&gt;Laravel&lt;/h1&gt;&quot;, &quot;&lt;p&gt;1. Rotas&lt;/p&gt;&quot;, &quot;&lt;p&gt;2. Banco de dados&lt;/p&gt;&quot;, &quot;404 | Página não encontrada&quot;]">
+  <div class="desc"><div class="task"><p class="obj">🎯 <b>Objetivo:</b> Ligar Model, relacionamento, controller, rotas e views com o banco.</p><div class="task-cols"><div><p class="lbl">O que fazer</p><ol class="steps"><li>Migrations, seeder e views estão prontos. Crie os models <code>Curso</code> (com <code>aulas()</code>) e <code>Aula</code>.</li><li>Crie o <code>CursoController</code>: <code>index()</code> manda os cursos <b>em ordem alfabética</b> (com <code>with("aulas")</code>) para <code>cursos.index</code>; <code>show($id)</code> usa <code>findOrFail</code> e a view <code>cursos.show</code>.</li><li>Registre <code>/cursos</code> (nome <code>cursos.index</code>) e <code>/cursos/{id}</code> (nome <code>cursos.show</code>). Rode <code>migrate --seed</code> antes das visitas.</li></ol></div><div class="expbox"><p class="lbl">Saída esperada</p><pre>&lt;li&gt;&lt;a href="/cursos/2"&gt;CSS&lt;/a&gt; (1 aulas)&lt;/li&gt;<br>&lt;li&gt;&lt;a href="/cursos/1"&gt;Laravel&lt;/a&gt; (2 aulas)&lt;/li&gt;<br>&lt;h1&gt;Laravel&lt;/h1&gt;<br>&lt;p&gt;1. Rotas&lt;/p&gt;<br>&lt;p&gt;2. Banco de dados&lt;/p&gt;<br>404 | Página não encontrada</pre></div></div></div></div>
+  <div class="try"><b>Depois de acertar, teste também:</b> Ligue o <code>DB::listen</code> antes das visitas e confira quantas consultas a lista faz com e sem o <code>with("aulas")</code>.</div>
+<script type="text/x-code">
+<?php
+// database/migrations/2026_11_14_000001_create_cursos_table.php
+criar_migration("2026_11_14_000001_create_cursos_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("cursos", function (Blueprint $table) {
+      $table->id();
+      $table->string("nome");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("cursos");
+  }
+});
+
+// database/migrations/2026_11_14_000002_create_aulas_table.php
+criar_migration("2026_11_14_000002_create_aulas_table", new class extends Migration {
+  public function up(): void {
+    Schema::create("aulas", function (Blueprint $table) {
+      $table->id();
+      $table->foreignId("curso_id")->constrained()->cascadeOnDelete();
+      $table->string("titulo");
+      $table->timestamps();
+    });
+  }
+
+  public function down(): void {
+    Schema::dropIfExists("aulas");
+  }
+});
+
+// database/seeders/DatabaseSeeder.php (pronto)
+class DatabaseSeeder extends Seeder {
+  public function run(): void {
+    $laravel = Curso::create(["nome" => "Laravel"]);
+    $laravel->aulas()->create(["titulo" => "Rotas"]);
+    $laravel->aulas()->create(["titulo" => "Banco de dados"]);
+    $css = Curso::create(["nome" => "CSS"]);
+    $css->aulas()->create(["titulo" => "Flexbox"]);
+  }
+}
+
+// ---------- resources/views (prontas) ----------
+criar_view("layouts.app", <<<'BLADE'
+<nav>Greenn School</nav>
+@yield('conteudo')
+BLADE);
+
+criar_view("cursos.index", <<<'BLADE'
+@extends('layouts.app')
+@section('conteudo')
+  <h1>Cursos</h1>
+  <ul>
+    @foreach ($cursos as $curso)
+      <li><a href="{{ route('cursos.show', $curso->id) }}">{{ $curso->nome }}</a> ({{ $curso->aulas->count() }} aulas)</li>
+    @endforeach
+  </ul>
+@endsection
+BLADE);
+
+criar_view("cursos.show", <<<'BLADE'
+@extends('layouts.app')
+@section('conteudo')
+  <h1>{{ $curso->nome }}</h1>
+  @foreach ($curso->aulas as $aula)
+    <p>{{ $loop->iteration }}. {{ $aula->titulo }}</p>
+  @endforeach
+@endsection
+BLADE);
+
+// ---------- app/Models ----------
+// crie Curso (com aulas) e Aula
+
+// ---------- app/Http/Controllers/CursoController.php ----------
+// crie o controller
+
+// ---------- routes/web.php ----------
+// registre as rotas
+
+artisan("migrate --seed");
+visitar("/cursos");
+visitar("/cursos/1");
+visitar("/cursos/7");
+</script>
+</section>
+
+</div>
+
+<!-- Mini-Laravel: carregado antes do código nos exemplos com data-kit="laravel" (cópia de php-04-banco-de-dados/mini-laravel.php) -->
+<script type="text/x-kit" id="kit-laravel">
+<?php
+// MINI-LARAVEL DO PLAYGROUND (versão da L4: rotas + Blade + banco de dados)
+// Uma versão de brinquedo do que o Laravel faz. O banco é um SQLite de verdade, na memória:
+// ele nasce vazio a cada execução. No site já vem carregado; no computador: require "mini-laravel.php";
+// (precisa da extensão pdo_sqlite, que já vem no PHP do Laravel Herd e na maioria das instalações)
+//
+// ROTAS E VIEWS: tudo da L3 (Route::get, ->name, route(), abort, visitar, criar_view, view, Blade)
+//
+// MIGRATIONS (database/migrations)
+//   criar_migration($nome, new class extends Migration { up() / down() })   faz o papel do arquivo
+//   Schema::create("cursos", function (Blueprint $table) { ... })          cria uma tabela
+//   Schema::table / Schema::dropIfExists / Schema::hasTable / Schema::getColumnListing
+//   $table->id(), string, text, integer, decimal, boolean, date, foreignId, enum, timestamps ...
+//     ->nullable() ->default(x) ->unique() ->constrained() ->cascadeOnDelete()
+//
+// ARTISAN (o terminal)
+//   artisan("migrate")  migrate --pretend  migrate:rollback  migrate:status  migrate:fresh --seed
+//   artisan("db:seed")  db:seed --class=CursoSeeder  make:model Curso -m  make:migration  make:seeder
+//
+// BANCO
+//   DB::select($sql, $valores)  DB::insert  DB::update  DB::delete  DB::statement  DB::table("cursos")
+//   DB::listen(function ($query) { ... })     mostra cada SQL que vai para o banco
+//   ver_tabela("cursos")                       mostra as linhas da tabela (só no playground)
+//
+// ELOQUENT (app/Models)
+//   class Curso extends Model { protected $fillable = [...]; }
+//   Curso::all() / find / findOrFail / where / orderBy / first / count / pluck / create / destroy
+//   $curso->save() / update([...]) / delete()
+//   hasMany / hasOne / belongsTo e with() para carregar junto
+//
+// SEEDERS (database/seeders)
+//   class DatabaseSeeder extends Seeder { public function run(): void { ... } }
+namespace App\Http\Controllers {
+  // no Laravel: app/Http/Controllers/Controller.php
+  abstract class Controller {}
+}
+
+namespace {
+  class_alias(App\Http\Controllers\Controller::class, 'Controller');
+
+  // ===================== ROTAS =====================
+
+  class HttpErro extends Exception {}
+
+  class RotaRegistrada {
+    public ?string $nome = null;
+    public array $regras = [];
+
+    public function __construct(public string $url, public mixed $acao) {}
+
+    public function name(string $nome): static {
+      $this->nome = Route::$prefixoNome . $nome;
+      return $this;
+    }
+
+    public function where(string|array $param, ?string $regex = null): static {
+      $regras = is_array($param) ? $param : [$param => $regex];
+      $this->regras = array_merge($this->regras, $regras);
+      return $this;
+    }
+
+    public function whereNumber(string $param): static {
+      return $this->where($param, '[0-9]+');
+    }
+
+    // "/cursos/{id}/{aula?}" vira #^/cursos/([0-9]+)(?:/([^/]+))?$#
+    public function regex(): string {
+      $r = preg_replace_callback('#/\{(\w+)(\?)?\}#', function ($m) {
+        $parte = '(' . ($this->regras[$m[1]] ?? '[^/]+') . ')';
+        return isset($m[2]) ? "(?:/$parte)?" : "/$parte";
+      }, $this->url);
+      return '#^' . $r . '$#';
+    }
+  }
+
+  class GrupoDeRotas {
+    private string $prefixo = '';
+    private string $nome = '';
+
+    public function prefix(string $prefixo): static { $this->prefixo = trim($prefixo, '/'); return $this; }
+    public function name(string $nome): static { $this->nome = $nome; return $this; }
+
+    public function group(Closure $rotas): void {
+      [$p, $n] = [Route::$prefixo, Route::$prefixoNome];
+      if ($this->prefixo !== '') Route::$prefixo .= '/' . $this->prefixo;
+      Route::$prefixoNome .= $this->nome;
+      $rotas();
+      [Route::$prefixo, Route::$prefixoNome] = [$p, $n];
+    }
+  }
+
+  class Route {
+    public static array $rotas = [];
+    public static string $prefixo = '';
+    public static string $prefixoNome = '';
+
+    public static function get(string $url, array|Closure $acao): RotaRegistrada {
+      $url = '/' . trim(self::$prefixo . '/' . trim($url, '/'), '/');
+      return self::$rotas[] = new RotaRegistrada($url, $acao);
+    }
+
+    public static function view(string $url, string $view, array $dados = []): RotaRegistrada {
+      return self::get($url, fn () => view($view, $dados));
+    }
+
+    public static function redirect(string $de, string $para): RotaRegistrada {
+      return self::get($de, fn () => new Redirecionamento($para));
+    }
+
+    public static function prefix(string $prefixo): GrupoDeRotas {
+      return (new GrupoDeRotas())->prefix($prefixo);
+    }
+
+    public static function name(string $nome): GrupoDeRotas {
+      return (new GrupoDeRotas())->name($nome);
+    }
+
+    public static function despachar(string $url): string {
+      $url = '/' . trim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+      try {
+        foreach (self::$rotas as $rota) {
+          if (preg_match($rota->regex(), $url, $partes)) {
+            array_shift($partes);                                       // sobram só os {parâmetros}
+            while ($partes && end($partes) === '') array_pop($partes);  // opcionais que não vieram
+            $acao = $rota->acao;
+            if (is_array($acao)) {
+              [$classe, $metodo] = $acao;
+              $acao = [new $classe(), $metodo];
+            }
+            $resposta = $acao(...$partes);
+            if ($resposta instanceof Redirecionamento) {
+              return "↪ 302: redirecionando para $resposta->para\n" . self::despachar($resposta->para);
+            }
+            if (is_array($resposta) || $resposta instanceof JsonSerializable) {
+              return json_encode($resposta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            }
+            return (string) $resposta;
+          }
+        }
+        abort(404);
+      } catch (HttpErro $erro) {
+        return $erro->getMessage();
+      } catch (ModelNotFoundException $erro) {
+        return '404 | Página não encontrada';   // findOrFail não achou: o Laravel responde 404
+      }
+    }
+  }
+
+  class Redirecionamento {
+    public function __construct(public string $para) {}
+  }
+
+  function redirect(string $para): Redirecionamento {
+    return new Redirecionamento($para);
+  }
+
+  function route(string $nome, mixed $parametros = []): string {
+    foreach (Route::$rotas as $rota) {
+      if ($rota->nome !== $nome) continue;
+      $parametros = is_array($parametros) ? $parametros : [$parametros];
+      $url = preg_replace_callback('#/\{(\w+)(\?)?\}#', function ($m) use (&$parametros, $nome) {
+        $valor = array_key_exists($m[1], $parametros) ? $parametros[$m[1]] : array_shift($parametros);
+        unset($parametros[$m[1]]);
+        if ($valor === null && isset($m[2])) return '';
+        if ($valor === null) throw new Exception("Faltou o parâmetro {{$m[1]}} para a rota \"$nome\"");
+        return '/' . $valor;
+      }, $rota->url);
+      return $url === '' ? '/' : $url;
+    }
+    throw new Exception("A rota \"$nome\" não existe (confira o ->name)");
+  }
+
+  function abort(int $codigo, string $mensagem = ''): never {
+    $textos = [403 => 'Acesso proibido', 404 => 'Página não encontrada', 500 => 'Erro no servidor'];
+    throw new HttpErro("$codigo | " . ($mensagem ?: ($textos[$codigo] ?? 'Erro')));
+  }
+
+  function visitar(string $url): void {
+    echo Route::despachar($url), "\n";
+  }
+
+  function url(string $caminho = ''): string {
+    return '/' . ltrim($caminho, '/');
+  }
+
+  function asset(string $caminho): string {
+    return url($caminho);
+  }
+
+  // HTML confiável (ex.: o $slot de um componente): o {{ }} não escapa
+  class HtmlString {
+    public function __construct(public string $html) {}
+    public function __toString(): string { return $this->html; }
+  }
+
+  function e(mixed $valor): string {
+    if ($valor instanceof HtmlString) return (string) $valor;
+    return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+  }
+
+  function csrf_token(): string {
+    return 'token-do-formulario';
+  }
+
+  // ===================== BLADE =====================
+
+  // $loop: existe dentro de todo @foreach do Blade
+  class Loop {
+    public int $index = -1;
+    public int $iteration = 0;
+    public bool $first = false;
+    public bool $last = false;
+    public bool $even = false;
+    public bool $odd = false;
+    public int $remaining;
+
+    public function __construct(public int $count, public ?Loop $parent = null) {
+      $this->remaining = $count;
+    }
+
+    public function passo(): void {
+      $this->index++;
+      $this->iteration++;
+      $this->first = $this->iteration === 1;
+      $this->last = $this->iteration === $this->count;
+      $this->even = $this->iteration % 2 === 0;
+      $this->odd = !$this->even;
+      $this->remaining = $this->count - $this->iteration;
+    }
+  }
+
+  class Blade {
+    public static array $arquivos = [];
+    private static array $secoes = [];
+    private static array $abertas = [];
+
+    // transforma Blade em PHP (o Laravel faz isso e guarda em storage/framework/views)
+    public static function compilar(string $t): string {
+      $t = preg_replace('/\{\{--.*?--\}\}/s', '', $t);                                   // {{-- comentário --}}
+      $t = self::componentes($t);
+      // (o PHP engole a quebra de linha logo depois do fechamento da tag: por isso ela vai em dobro)
+      $t = preg_replace('/\{!!\s*(.+?)\s*!!\}(\r?\n)?/s', '<?php echo $1; ?>$2$2', $t);           // {!! sem escapar !!}
+      $t = preg_replace('/(?<!@)\{\{\s*(.+?)\s*\}\}(\r?\n)?/s', '<?php echo e($1); ?>$2$2', $t);  // {{ escapado }}
+      $t = str_replace('@{{', '{{', $t);
+      $parenteses = '(\s*\((?:[^()\'"]++|\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*"|(?2))*\))?';
+      return preg_replace_callback('/\B@(\w+)' . $parenteses . '([ \t]*\r?\n)?/', function ($m) {
+        $args = isset($m[2]) && $m[2] !== '' ? trim(substr(trim($m[2]), 1, -1)) : null;
+        $php = self::diretiva($m[1], $args);
+        if ($php === null) return $m[0];   // diretiva desconhecida: fica como está (ex.: e-mails)
+        $nl = $m[3] ?? '';
+        // as que mostram algo (@include, @yield…) mantêm a quebra de linha depois delas
+        return in_array($m[1], ['include', 'yield', 'json', 'csrf', 'method']) ? $php . $nl . $nl : $php . $nl;
+      }, $t);
+    }
+
+    private static function diretiva(string $nome, ?string $a): ?string {
+      return match ($nome) {
+        'if' => "<?php if ($a): ?>",
+        'elseif' => "<?php elseif ($a): ?>",
+        'else' => '<?php else: ?>',
+        'endif', 'endunless', 'endisset', 'endempty', 'endforelse' => '<?php endif; ?>',
+        'unless' => "<?php if (!($a)): ?>",
+        'isset' => "<?php if (isset($a)): ?>",
+        'empty' => $a === null
+          ? '<?php endforeach; $loop = array_pop($__loops); if (array_pop($__vazios)): ?>'   // o @empty do @forelse
+          : "<?php if (empty($a)): ?>",
+        'foreach', 'forelse' => self::laco($nome, $a),
+        'endforeach' => '<?php endforeach; $loop = array_pop($__loops); ?>',
+        'for' => "<?php for ($a): ?>",
+        'endfor' => '<?php endfor; ?>',
+        'while' => "<?php while ($a): ?>",
+        'endwhile' => '<?php endwhile; ?>',
+        'php' => $a === null ? '<?php ' : "<?php $a; ?>",
+        'endphp' => ' ?>',
+        'extends' => "<?php \$__pai = $a; ?>",
+        'section' => "<?php Blade::section($a); ?>",
+        'endsection', 'stop' => '<?php Blade::endsection(); ?>',
+        'yield' => "<?php echo Blade::mostrar($a); ?>",
+        'include' => "<?php echo Blade::incluir(get_defined_vars(), $a); ?>",
+        'props' => "<?php foreach ($a as \$__k => \$__v) { if (is_int(\$__k)) continue; \$\$__k ??= \$__v; } ?>",
+        'json' => "<?php echo json_encode($a, JSON_UNESCAPED_UNICODE); ?>",
+        'csrf' => '<input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">',
+        'method' => "<input type=\"hidden\" name=\"_method\" value=\"<?php echo $a; ?>\">",
+        default => null,
+      };
+    }
+
+    // @foreach($cursos as $curso) guarda o $loop de fora e cria um novo
+    private static function laco(string $tipo, string $a): string {
+      [$lista, $vars] = preg_split('/\s+as\s+/', $a, 2);
+      $vazio = $tipo === 'forelse' ? ' $__vazios[] = is_countable($__lista) ? count($__lista) === 0 : empty($__lista);' : '';
+      return "<?php \$__loops[] = \$loop ?? null; \$__lista = $lista;$vazio "
+        . "\$loop = new Loop(count(\$__lista), end(\$__loops) ?: null); "
+        . "foreach (\$__lista as $vars): \$loop->passo(); ?>";
+    }
+
+    // <x-alerta tipo="erro" :titulo="$t">texto</x-alerta>  vira  a view components.alerta com $slot
+    private static function componentes(string $t): string {
+      $attrs = '((?:\s+:?[\w-]+(?:="[^"]*")?)*)';
+      $converte = function (string $nome, string $atributos, ?string $slot, string $nl = '') {
+        preg_match_all('/(:?)([\w-]+)(?:="([^"]*)")?/', $atributos, $lista, PREG_SET_ORDER);
+        $dados = [];
+        foreach ($lista as [, $dinamico, $chave, $valor]) {
+          $valor ??= 'true';
+          $dados[] = var_export(lcfirst(str_replace('-', '', ucwords($chave, '-'))), true) . ' => '
+            . ($dinamico ? $valor : var_export($valor, true));
+        }
+        $dados = '[' . implode(', ', $dados) . ']';
+        if ($slot === null) return "<?php echo Blade::componente('$nome', $dados, ''); ?>$nl$nl";
+        return "<?php ob_start(); ?>$slot<?php echo Blade::componente('$nome', $dados, ob_get_clean()); ?>$nl$nl";
+      };
+      $t = preg_replace_callback('#<x-([\w.-]+)' . $attrs . '\s*/>(\r?\n)?#',
+        fn ($m) => $converte($m[1], $m[2], null, $m[3] ?? ''), $t);
+      do {
+        $antes = $t;
+        $t = preg_replace_callback('#<x-([\w.-]+)' . $attrs . '\s*>((?:(?!<x-).)*?)</x-\1>(\r?\n)?#s',
+          fn ($m) => $converte($m[1], $m[2], $m[3], $m[4] ?? ''), $t);
+      } while ($t !== $antes);
+      return $t;
+    }
+
+    public static function render(string $__view, array $__dados = []): string {
+      if (!isset(self::$arquivos[$__view])) {
+        throw new Exception("A view \"$__view\" não existe (crie com criar_view)");
+      }
+      $__pai = null;
+      extract($__dados);   // cada chave do array vira uma variável dentro da view
+      $__nivel = ob_get_level();
+      $__secoesAbertas = count(self::$abertas);
+      ob_start();
+      try {
+        eval('?>' . self::compilar(self::$arquivos[$__view]));
+        if (count(self::$abertas) > $__secoesAbertas) {
+          throw new Exception("Faltou o @endsection na view \"$__view\"");
+        }
+      } finally {
+        $__html = '';
+        while (ob_get_level() > $__nivel) $__html = ob_get_clean() . $__html;
+      }
+      // a view tem @extends: monta o layout, que mostra as @section com @yield
+      return $__pai ? self::render($__pai, $__dados) : $__html;
+    }
+
+    public static function section(string $nome, mixed $valor = null): void {
+      if (func_num_args() === 2) {
+        self::$secoes[$nome] ??= e($valor);
+        return;
+      }
+      self::$abertas[] = $nome;
+      ob_start();
+    }
+
+    public static function endsection(): void {
+      $nome = array_pop(self::$abertas);
+      $conteudo = ob_get_clean();
+      self::$secoes[$nome] ??= $conteudo;   // a seção da página filha vale mais que a do layout
+    }
+
+    public static function mostrar(string $nome, string $padrao = ''): string {
+      return self::$secoes[$nome] ?? e($padrao);
+    }
+
+    public static function incluir(array $vars, string $view, array $dados = []): string {
+      $vars = array_filter($vars, fn ($k) => !str_starts_with($k, '__') && $k !== 'loop', ARRAY_FILTER_USE_KEY);
+      return self::render($view, array_merge($vars, $dados));
+    }
+
+    public static function componente(string $nome, array $dados, string $slot): string {
+      return self::render("components.$nome", $dados + ['slot' => new HtmlString($slot)]);
+    }
+
+    public static function limpar(): void {
+      self::$secoes = [];
+      self::$abertas = [];
+    }
+  }
+
+  function criar_view(string $nome, string $blade): void {
+    Blade::$arquivos[$nome] = $blade;
+  }
+
+  function view(string $nome, array $dados = []): string {
+    Blade::limpar();
+    return Blade::render($nome, $dados);
+  }
+
+  function compilar_blade(string $blade): string {
+    return Blade::compilar($blade);
+  }
+
+  // ===================== BANCO DE DADOS (novo na L4) =====================
+  // Um banco SQLite de verdade, criado na memória a cada execução (some quando o script termina).
+
+  class QueryException extends Exception {}
+  class ModelNotFoundException extends Exception {}
+  class MassAssignmentException extends Exception {}
+  class MissingAttributeException extends Exception {}
+
+  // o que o DB::listen recebe a cada consulta
+  class ConsultaExecutada {
+    public float $time = 0.0;
+    public function __construct(public string $sql, public array $bindings = []) {}
+
+    // o SQL com os valores no lugar dos ?
+    public function toRawSql(): string {
+      $b = $this->bindings;
+      return preg_replace_callback('/\?/', function () use (&$b) {
+        $v = array_shift($b);
+        return match (true) {
+          $v === null => 'null',
+          is_bool($v) => $v ? '1' : '0',
+          is_int($v), is_float($v) => (string) $v,
+          default => "'" . str_replace("'", "''", (string) $v) . "'",
+        };
+      }, $this->sql);
+    }
+  }
+
+  class Str {
+    public static function snake(string $t): string {
+      return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $t));
+    }
+
+    // o Laravel chuta o plural em inglês: curso → cursos, professor → professors (!)
+    public static function plural(string $t): string {
+      if (preg_match('/[^aeiou]y$/', $t)) return substr($t, 0, -1) . 'ies';
+      if (preg_match('/(s|x|z|ch|sh)$/', $t)) return $t . 'es';
+      return $t . 's';
+    }
+  }
+
+  class DB {
+    private static ?PDO $pdo = null;
+    private static array $ouvintes = [];
+    public static ?array $fingindo = null;   // migrate --pretend: guarda o SQL em vez de rodar
+
+    public static function pdo(): PDO {
+      if (!self::$pdo) {
+        self::$pdo = new PDO('sqlite::memory:');
+        self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        self::$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        self::$pdo->exec('PRAGMA foreign_keys = ON');
+      }
+      return self::$pdo;
+    }
+
+    // roda um SQL com os valores separados (os ?): é assim que o Laravel evita SQL injection
+    public static function executar(string $sql, array $bindings = []): ?PDOStatement {
+      $bindings = array_values($bindings);
+      $consulta = new ConsultaExecutada($sql, $bindings);
+      if (self::$fingindo !== null) {
+        self::$fingindo[] = $consulta->toRawSql();
+        return null;
+      }
+      try {
+        $st = self::pdo()->prepare($sql);
+        foreach ($bindings as $i => $v) {
+          $tipo = match (true) {
+            $v === null => PDO::PARAM_NULL,
+            is_bool($v), is_int($v) => PDO::PARAM_INT,
+            default => PDO::PARAM_STR,
+          };
+          $st->bindValue($i + 1, is_bool($v) ? (int) $v : $v, $tipo);
+        }
+        $st->execute();
+      } catch (PDOException $erro) {
+        throw new QueryException($erro->getMessage() . ' (Connection: sqlite, SQL: ' . $consulta->toRawSql() . ')');
+      }
+      foreach (self::$ouvintes as $ouvinte) $ouvinte($consulta);
+      return $st;
+    }
+
+    // DB::select devolve uma lista de objetos simples (stdClass)
+    public static function select(string $sql, array $bindings = []): array {
+      $st = self::executar($sql, $bindings);
+      return $st ? array_map(fn ($l) => (object) $l, $st->fetchAll()) : [];
+    }
+
+    public static function insert(string $sql, array $bindings = []): bool {
+      self::executar($sql, $bindings);
+      return true;
+    }
+
+    public static function update(string $sql, array $bindings = []): int {
+      return self::executar($sql, $bindings)?->rowCount() ?? 0;
+    }
+
+    public static function delete(string $sql, array $bindings = []): int {
+      return self::update($sql, $bindings);
+    }
+
+    public static function statement(string $sql, array $bindings = []): bool {
+      self::executar($sql, $bindings);
+      return true;
+    }
+
+    public static function table(string $tabela): Builder {
+      return new Builder($tabela);
+    }
+
+    public static function listen(Closure $ouvinte): void {
+      self::$ouvintes[] = $ouvinte;
+    }
+
+    public static function lastInsertId(): int {
+      return (int) self::pdo()->lastInsertId();
+    }
+  }
+
+  function aspas(string $nome): string {
+    if ($nome === '*') return '*';
+    if (preg_match('/^(.+)\s+as\s+(.+)$/i', $nome, $m)) return aspas($m[1]) . ' as ' . aspas($m[2]);
+    return implode('.', array_map(fn ($p) => $p === '*' ? '*' : '"' . $p . '"', explode('.', $nome)));
+  }
+
+  // ---------- Query Builder: monta o SQL peça por peça ----------
+  class Builder {
+    private array $wheres = [];      // [ligação, sql, valores]
+    private array $orders = [];
+    private ?int $limite = null;
+    private ?int $pular = null;
+    private array $colunas = ['*'];
+    private array $com = [];         // with(): relacionamentos carregados de uma vez
+
+    public function __construct(public string $tabela, public ?string $model = null) {}
+
+    public function where(string|array|Closure $coluna, mixed $operador = null, mixed $valor = null, string $ligacao = 'and'): static {
+      if (is_array($coluna)) {
+        foreach ($coluna as $c => $v) $this->where($c, '=', $v, $ligacao);
+        return $this;
+      }
+      if ($coluna instanceof Closure) {
+        $grupo = new Builder($this->tabela);
+        $coluna($grupo);
+        [$sql, $valores] = $grupo->sqlDoWhere();
+        if ($sql !== '') $this->wheres[] = [$ligacao, '(' . $sql . ')', $valores];
+        return $this;
+      }
+      if (func_num_args() === 2 || ($valor === null && !in_array(strtolower((string) $operador), ['=', '!=', '<>', '>', '<', '>=', '<=', 'like', 'not like'], true))) {
+        [$valor, $operador] = [$operador, '='];
+      }
+      if ($valor === null) return $operador === '=' ? $this->whereNull($coluna, $ligacao) : $this->whereNotNull($coluna, $ligacao);
+      $this->wheres[] = [$ligacao, aspas($coluna) . ' ' . $operador . ' ?', [$valor]];
+      return $this;
+    }
+
+    public function orWhere(string|array|Closure $coluna, mixed $operador = null, mixed $valor = null): static {
+      if (func_num_args() === 2) return $this->where($coluna, '=', $operador, 'or');
+      return $this->where($coluna, $operador, $valor, 'or');
+    }
+
+    public function whereIn(string $coluna, array|Collection $valores, string $ligacao = 'and', bool $not = false): static {
+      $valores = $valores instanceof Collection ? $valores->all() : array_values($valores);
+      if (!$valores) {
+        $this->wheres[] = [$ligacao, $not ? '1 = 1' : '0 = 1', []];
+        return $this;
+      }
+      $this->wheres[] = [$ligacao, aspas($coluna) . ($not ? ' not in (' : ' in (') . implode(', ', array_fill(0, count($valores), '?')) . ')', $valores];
+      return $this;
+    }
+
+    public function whereNotIn(string $coluna, array|Collection $valores): static {
+      return $this->whereIn($coluna, $valores, 'and', true);
+    }
+
+    public function whereNull(string $coluna, string $ligacao = 'and'): static {
+      $this->wheres[] = [$ligacao, aspas($coluna) . ' is null', []];
+      return $this;
+    }
+
+    public function whereNotNull(string $coluna, string $ligacao = 'and'): static {
+      $this->wheres[] = [$ligacao, aspas($coluna) . ' is not null', []];
+      return $this;
+    }
+
+    public function whereBetween(string $coluna, array $entre): static {
+      $this->wheres[] = ['and', aspas($coluna) . ' between ? and ?', array_values($entre)];
+      return $this;
+    }
+
+    public function orderBy(string $coluna, string $direcao = 'asc'): static {
+      $this->orders[] = aspas($coluna) . ' ' . (strtolower($direcao) === 'desc' ? 'desc' : 'asc');
+      return $this;
+    }
+
+    public function orderByDesc(string $coluna): static { return $this->orderBy($coluna, 'desc'); }
+    public function latest(string $coluna = 'created_at'): static { return $this->orderBy($coluna, 'desc'); }
+    public function oldest(string $coluna = 'created_at'): static { return $this->orderBy($coluna, 'asc'); }
+    public function limit(int $n): static { $this->limite = $n; return $this; }
+    public function take(int $n): static { return $this->limit($n); }
+    public function offset(int $n): static { $this->pular = $n; return $this; }
+    public function skip(int $n): static { return $this->offset($n); }
+
+    public function select(string|array ...$colunas): static {
+      $this->colunas = is_array($colunas[0] ?? null) ? $colunas[0] : $colunas;
+      return $this;
+    }
+
+    public function with(string|array ...$relacoes): static {
+      $this->com = array_merge($this->com, is_array($relacoes[0] ?? null) ? $relacoes[0] : $relacoes);
+      return $this;
+    }
+
+    private function sqlDoWhere(): array {
+      $sql = '';
+      $valores = [];
+      foreach ($this->wheres as $i => [$ligacao, $pedaco, $vals]) {
+        $sql .= ($i ? " $ligacao " : '') . $pedaco;
+        array_push($valores, ...$vals);
+      }
+      return [$sql, $valores];
+    }
+
+    private function montar(?array $colunas = null): array {
+      [$where, $valores] = $this->sqlDoWhere();
+      $sql = 'select ' . implode(', ', array_map('aspas', $colunas ?? $this->colunas)) . ' from ' . aspas($this->tabela);
+      if ($where !== '') $sql .= ' where ' . $where;
+      if ($this->orders) $sql .= ' order by ' . implode(', ', $this->orders);
+      if ($this->limite !== null) $sql .= ' limit ' . $this->limite;
+      if ($this->pular !== null) $sql .= ($this->limite === null ? ' limit -1' : '') . ' offset ' . $this->pular;
+      return [$sql, $valores];
+    }
+
+    public function toSql(): string {
+      return $this->montar()[0];
+    }
+
+    public function toRawSql(): string {
+      return (new ConsultaExecutada(...$this->montar()))->toRawSql();
+    }
+
+    public function get(array|string $colunas = ['*']): Collection {
+      if ($colunas !== ['*']) $this->select(...(array) $colunas);
+      $linhas = DB::executar(...$this->montar())?->fetchAll() ?? [];
+      if (!$this->model) return new Collection(array_map(fn ($l) => (object) $l, $linhas));
+      $modelos = array_map(fn ($l) => (new $this->model())->hidratar($l), $linhas);
+      foreach ($this->com as $relacao) Model::carregarJuntos($modelos, $relacao);
+      return new Collection($modelos);
+    }
+
+    public function first(): mixed {
+      return (clone $this)->limit(1)->get()->first();
+    }
+
+    public function firstOrFail(): mixed {
+      return $this->first() ?? throw new ModelNotFoundException('No query results for model [' . $this->model . '].');
+    }
+
+    public function find(mixed $id): mixed {
+      return (clone $this)->where('id', '=', $id)->first();
+    }
+
+    public function findOrFail(mixed $id): mixed {
+      return $this->find($id) ?? throw new ModelNotFoundException('No query results for model [' . $this->model . '] ' . $id);
+    }
+
+    public function firstWhere(string $coluna, mixed $operador = null, mixed $valor = null): mixed {
+      return (clone $this)->where(...func_get_args())->first();
+    }
+
+    public function value(string $coluna): mixed {
+      $linha = DB::executar(...(clone $this)->limit(1)->montar([$coluna]))?->fetch();
+      return $linha ? $linha[$coluna] : null;
+    }
+
+    public function pluck(string $coluna, ?string $chave = null): Collection {
+      $linhas = DB::executar(...$this->montar($chave ? [$coluna, $chave] : [$coluna]))?->fetchAll() ?? [];
+      $itens = [];
+      foreach ($linhas as $l) {
+        if ($chave) $itens[$l[$chave]] = $l[$coluna];
+        else $itens[] = $l[$coluna];
+      }
+      return new Collection($itens);
+    }
+
+    private function agregado(string $funcao, string $coluna): mixed {
+      [$where, $valores] = $this->sqlDoWhere();
+      $sql = "select $funcao(" . aspas($coluna) . ') as aggregate from ' . aspas($this->tabela) . ($where !== '' ? ' where ' . $where : '');
+      return DB::executar($sql, $valores)?->fetch()['aggregate'] ?? null;
+    }
+
+    public function count(string $coluna = '*'): int { return (int) $this->agregado('count', $coluna); }
+    public function sum(string $coluna): int|float { return $this->agregado('sum', $coluna) ?? 0; }
+    public function avg(string $coluna): mixed { return $this->agregado('avg', $coluna); }
+    public function max(string $coluna): mixed { return $this->agregado('max', $coluna); }
+    public function min(string $coluna): mixed { return $this->agregado('min', $coluna); }
+    public function exists(): bool { return $this->count() > 0; }
+    public function doesntExist(): bool { return !$this->exists(); }
+
+    public function insert(array $linhas): bool {
+      if (!array_is_list($linhas)) $linhas = [$linhas];
+      $colunas = array_keys($linhas[0]);
+      $grupo = '(' . implode(', ', array_fill(0, count($colunas), '?')) . ')';
+      $sql = 'insert into ' . aspas($this->tabela) . ' (' . implode(', ', array_map('aspas', $colunas)) . ') values '
+        . implode(', ', array_fill(0, count($linhas), $grupo));
+      return DB::insert($sql, array_merge(...array_map('array_values', $linhas)));
+    }
+
+    public function insertGetId(array $valores): int {
+      $this->insert($valores);
+      return DB::lastInsertId();
+    }
+
+    public function update(array $valores): int {
+      if ($this->model && (new $this->model())->timestamps) $valores['updated_at'] ??= agora();
+      [$where, $vals] = $this->sqlDoWhere();
+      $sets = implode(', ', array_map(fn ($c) => aspas($c) . ' = ?', array_keys($valores)));
+      $sql = 'update ' . aspas($this->tabela) . ' set ' . $sets . ($where !== '' ? ' where ' . $where : '');
+      return DB::update($sql, array_merge(array_values($valores), $vals));
+    }
+
+    public function increment(string $coluna, int|float $n = 1): int {
+      [$where, $vals] = $this->sqlDoWhere();
+      $sql = 'update ' . aspas($this->tabela) . ' set ' . aspas($coluna) . ' = ' . aspas($coluna) . ' + ?' . ($where !== '' ? ' where ' . $where : '');
+      return DB::update($sql, array_merge([$n], $vals));
+    }
+
+    public function decrement(string $coluna, int|float $n = 1): int {
+      return $this->increment($coluna, -$n);
+    }
+
+    public function delete(): int {
+      [$where, $vals] = $this->sqlDoWhere();
+      return DB::delete('delete from ' . aspas($this->tabela) . ($where !== '' ? ' where ' . $where : ''), $vals);
+    }
+
+    // Curso::where(...)->create([...]) e $curso->aulas()->create([...]) usam o model
+    public function create(array $atributos): Model {
+      $modelo = new $this->model($atributos);
+      foreach ($this->wheres as [$ligacao, $pedaco, $vals]) {
+        if (preg_match('/^"(\w+)" = \?$/', $pedaco, $m)) $modelo->{$m[1]} = $vals[0];
+      }
+      $modelo->save();
+      return $modelo;
+    }
+  }
+
+  // quantas letras (o PHP do navegador não tem mb_strlen)
+  function letras(string $texto): int {
+    return preg_match_all('/./us', $texto);
+  }
+
+  function agora(): string {
+    return date('Y-m-d H:i:s');
+  }
+
+  // ---------- Collection: a lista que o get() e o all() devolvem ----------
+  class Collection implements ArrayAccess, IteratorAggregate, Countable, JsonSerializable {
+    public function __construct(protected array $items = []) {}
+
+    public function all(): array { return $this->items; }
+    public function count(): int { return count($this->items); }
+    public function getIterator(): ArrayIterator { return new ArrayIterator($this->items); }
+    public function offsetExists(mixed $k): bool { return isset($this->items[$k]); }
+    public function offsetGet(mixed $k): mixed { return $this->items[$k]; }
+    public function offsetSet(mixed $k, mixed $v): void { if ($k === null) $this->items[] = $v; else $this->items[$k] = $v; }
+    public function offsetUnset(mixed $k): void { unset($this->items[$k]); }
+    public function isEmpty(): bool { return !$this->items; }
+    public function isNotEmpty(): bool { return (bool) $this->items; }
+    public function keys(): static { return new static(array_keys($this->items)); }
+    public function values(): static { return new static(array_values($this->items)); }
+
+    public function first(?callable $teste = null): mixed {
+      foreach ($this->items as $i) if (!$teste || $teste($i)) return $i;
+      return null;
+    }
+
+    public function last(): mixed {
+      return $this->items ? end($this->items) : null;
+    }
+
+    private static function pegar(mixed $item, ?string $campo): mixed {
+      if ($campo === null) return $item;
+      if (is_array($item)) return $item[$campo] ?? null;
+      return $item->$campo ?? null;
+    }
+
+    public function pluck(string $campo, ?string $chave = null): static {
+      $r = [];
+      foreach ($this->items as $i) {
+        if ($chave) $r[self::pegar($i, $chave)] = self::pegar($i, $campo);
+        else $r[] = self::pegar($i, $campo);
+      }
+      return new static($r);
+    }
+
+    public function map(callable $f): static { return new static(array_map($f, $this->items)); }
+    public function filter(?callable $f = null): static { return new static(array_values(array_filter($this->items, $f))); }
+    public function each(callable $f): static { foreach ($this->items as $k => $i) if ($f($i, $k) === false) break; return $this; }
+    public function take(int $n): static { return new static(array_slice($this->items, 0, $n)); }
+
+    public function where(string $campo, mixed $operador, mixed $valor = null): static {
+      if (func_num_args() === 2) [$valor, $operador] = [$operador, '='];
+      return $this->filter(function ($i) use ($campo, $operador, $valor) {
+        $v = self::pegar($i, $campo);
+        return match ($operador) { '>' => $v > $valor, '<' => $v < $valor, '>=' => $v >= $valor, '<=' => $v <= $valor, '!=', '<>' => $v != $valor, default => $v == $valor };
+      });
+    }
+
+    public function sum(?string $campo = null): int|float { return array_sum(array_map(fn ($i) => self::pegar($i, $campo), $this->items)); }
+    public function avg(?string $campo = null): int|float|null { return $this->items ? $this->sum($campo) / count($this->items) : null; }
+    public function max(?string $campo = null): mixed { return $this->items ? max(array_map(fn ($i) => self::pegar($i, $campo), $this->items)) : null; }
+    public function min(?string $campo = null): mixed { return $this->items ? min(array_map(fn ($i) => self::pegar($i, $campo), $this->items)) : null; }
+
+    public function contains(mixed $campo, mixed $valor = null): bool {
+      if (func_num_args() === 1) return in_array($campo, $this->items);
+      return $this->where($campo, $valor)->isNotEmpty();
+    }
+
+    public function sortBy(string|callable $campo, bool $desc = false): static {
+      $itens = $this->items;
+      usort($itens, function ($a, $b) use ($campo, $desc) {
+        [$x, $y] = is_callable($campo) ? [$campo($a), $campo($b)] : [self::pegar($a, $campo), self::pegar($b, $campo)];
+        return $desc ? $y <=> $x : $x <=> $y;
+      });
+      return new static($itens);
+    }
+
+    public function sortByDesc(string|callable $campo): static { return $this->sortBy($campo, true); }
+
+    public function groupBy(string $campo): static {
+      $g = [];
+      foreach ($this->items as $i) $g[self::pegar($i, $campo)][] = $i;
+      return new static(array_map(fn ($l) => new static($l), $g));
+    }
+
+    public function implode(string $campo, ?string $cola = null): string {
+      if ($cola === null) return implode($campo, $this->items);
+      return implode($cola, $this->pluck($campo)->items);
+    }
+
+    public function toArray(): array {
+      return array_map(fn ($i) => $i instanceof Model || $i instanceof Collection ? $i->toArray() : (is_object($i) ? (array) $i : $i), $this->items);
+    }
+
+    public function jsonSerialize(): array { return $this->toArray(); }
+    public function toJson(): string { return json_encode($this->toArray(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); }
+    public function __toString(): string { return $this->toJson(); }
+    public function __pgDump(): array { return ['Collection', $this->items, true]; }
+  }
+
+  function collect(array $itens = []): Collection {
+    return new Collection($itens);
+  }
+
+  // ---------- Relacionamentos: hasMany, hasOne e belongsTo ----------
+  class Relacao {
+    public function __construct(
+      public string $tipo,        // hasMany, hasOne ou belongsTo
+      public Builder $query,
+      public string $relacionado,
+      public string $chaveEstrangeira,
+      public string $chaveLocal,
+    ) {}
+
+    public function resultados(): mixed {
+      return $this->tipo === 'hasMany' ? $this->query->get() : $this->query->first();
+    }
+
+    // $curso->aulas()->orderBy(...)->get(), $curso->aulas()->count(), $curso->aulas()->create([...])
+    public function __call(string $metodo, array $args): mixed {
+      return $this->query->$metodo(...$args);
+    }
+  }
+
+  // ---------- Eloquent: cada Model é uma tabela, cada objeto é uma linha ----------
+  abstract class Model implements JsonSerializable {
+    protected $table;                // padrão: o nome da classe no plural, em inglês
+    protected $primaryKey = 'id';
+    public $timestamps = true;       // preenche created_at e updated_at sozinho
+    protected $fillable = [];        // colunas liberadas para create() e update()
+    protected $guarded = ['*'];
+    protected $casts = [];           // ex.: ['ativo' => 'boolean']
+    protected $hidden = [];          // colunas que não aparecem no toArray/JSON
+    protected $attributes = [];      // os valores da linha
+    protected $original = [];        // como a linha estava no banco (para saber o que mudou)
+    protected $relations = [];
+    public $exists = false;          // true quando o objeto já está salvo no banco
+    public $wasRecentlyCreated = false;
+
+    public function __construct(array $atributos = []) {
+      $this->fill($atributos);
+    }
+
+    public function getTable(): string {
+      return $this->table ?? Str::plural(Str::snake((new ReflectionClass($this))->getShortName()));
+    }
+
+    public function getKey(): mixed {
+      return $this->attributes[$this->primaryKey] ?? null;
+    }
+
+    public function newQuery(): Builder {
+      return new Builder($this->getTable(), static::class);
+    }
+
+    public static function query(): Builder {
+      return (new static())->newQuery();
+    }
+
+    public static function all(array|string $colunas = ['*']): Collection {
+      return static::query()->get($colunas);
+    }
+
+    public static function create(array $atributos): static {
+      $modelo = new static($atributos);
+      $modelo->save();
+      return $modelo;
+    }
+
+    public static function destroy(mixed ...$ids): int {
+      $ids = is_array($ids[0] ?? null) ? $ids[0] : $ids;
+      $apagados = 0;
+      foreach (static::query()->whereIn('id', $ids)->get() as $m) $apagados += (int) $m->delete();
+      return $apagados;
+    }
+
+    // Curso::where(...), Curso::find(1), Curso::orderBy(...) etc. viram uma consulta
+    public static function __callStatic(string $metodo, array $args): mixed {
+      return static::query()->$metodo(...$args);
+    }
+
+    public function __call(string $metodo, array $args): mixed {
+      return $this->newQuery()->$metodo(...$args);
+    }
+
+    // ----- mass assignment -----
+    public function isFillable(string $chave): bool {
+      if (in_array($chave, $this->fillable, true)) return true;
+      if ($this->fillable) return false;            // tem $fillable e a coluna não está lá: é ignorada
+      if ($this->guarded === ['*']) return false;
+      return !in_array($chave, $this->guarded, true);
+    }
+
+    public function fill(array $atributos): static {
+      $tudoBloqueado = !$this->fillable && $this->guarded === ['*'];
+      foreach ($atributos as $chave => $valor) {
+        if ($this->isFillable($chave)) {
+          $this->attributes[$chave] = $valor;
+        } elseif ($tudoBloqueado) {
+          throw new MassAssignmentException("Add [$chave] to fillable property to allow mass assignment on [" . static::class . '].');
+        }
+      }
+      return $this;
+    }
+
+    public function hidratar(array $linha): static {
+      $this->attributes = $this->original = $linha;
+      $this->exists = true;
+      return $this;
+    }
+
+    // ----- salvar, atualizar e apagar -----
+    public function save(): bool {
+      $query = DB::table($this->getTable());
+      if ($this->exists) {
+        $mudou = $this->getDirty();
+        if (!$mudou) return true;                    // nada mudou: nem vai ao banco
+        if ($this->timestamps) $this->attributes['updated_at'] = $mudou['updated_at'] = agora();
+        $query->where($this->primaryKey, $this->getKey())->update($mudou);
+        $this->original = $this->attributes;
+        return true;
+      }
+      if ($this->timestamps) {
+        $this->attributes['created_at'] ??= agora();
+        $this->attributes['updated_at'] ??= agora();
+      }
+      $dados = array_map(fn ($v) => is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v, $this->attributes);
+      if ($dados) $query->insert($dados);
+      else DB::insert('insert into ' . aspas($this->getTable()) . ' default values');
+      $this->attributes = [$this->primaryKey => DB::lastInsertId()] + $this->attributes;
+      $this->original = $this->attributes;
+      $this->exists = true;
+      $this->wasRecentlyCreated = true;
+      return true;
+    }
+
+    // as colunas que mudaram desde que a linha veio do banco
+    public function getDirty(): array {
+      $mudou = [];
+      foreach ($this->attributes as $k => $v) {
+        if (!array_key_exists($k, $this->original) || $this->original[$k] !== $v) $mudou[$k] = $v;
+      }
+      return $mudou;
+    }
+
+    public function isDirty(?string $coluna = null): bool {
+      return $coluna === null ? (bool) $this->getDirty() : array_key_exists($coluna, $this->getDirty());
+    }
+
+    public function update(array $atributos = []): bool {
+      if (!$this->exists) return false;
+      return $this->fill($atributos)->save();
+    }
+
+    public function delete(): bool {
+      if (!$this->exists) return false;
+      DB::table($this->getTable())->where($this->primaryKey, $this->getKey())->delete();
+      $this->exists = false;
+      return true;
+    }
+
+    public function fresh(): ?static {
+      return $this->exists ? static::query()->find($this->getKey()) : null;
+    }
+
+    public function refresh(): static {
+      $this->attributes = $this->original = $this->fresh()->attributes;
+      $this->relations = [];
+      return $this;
+    }
+
+    // ----- relacionamentos -----
+    protected function hasMany(string $relacionado, ?string $fk = null, ?string $local = null): Relacao {
+      $fk ??= Str::snake((new ReflectionClass($this))->getShortName()) . '_id';
+      $local ??= $this->primaryKey;
+      $query = (new $relacionado())->newQuery()->where($fk, '=', $this->attributes[$local] ?? null);
+      return new Relacao('hasMany', $query, $relacionado, $fk, $local);
+    }
+
+    protected function hasOne(string $relacionado, ?string $fk = null, ?string $local = null): Relacao {
+      $r = $this->hasMany($relacionado, $fk, $local);
+      $r->tipo = 'hasOne';
+      return $r;
+    }
+
+    protected function belongsTo(string $relacionado, ?string $fk = null, string $dono = 'id'): Relacao {
+      $fk ??= Str::snake((new ReflectionClass($relacionado))->getShortName()) . '_id';
+      $query = (new $relacionado())->newQuery()->where($dono, '=', $this->attributes[$fk] ?? null);
+      return new Relacao('belongsTo', $query, $relacionado, $fk, $dono);
+    }
+
+    // with('aulas'): uma consulta só para os relacionamentos de todos os models (evita o N+1)
+    public static function carregarJuntos(array $modelos, string $nome): void {
+      if (!$modelos) return;
+      $r = $modelos[0]->$nome();
+      $chaveDeCada = $r->tipo === 'belongsTo' ? $r->chaveEstrangeira : $r->chaveLocal;
+      $colunaNoOutro = $r->tipo === 'belongsTo' ? $r->chaveLocal : $r->chaveEstrangeira;
+      $ids = array_values(array_unique(array_filter(array_map(fn ($m) => $m->attributes[$chaveDeCada] ?? null, $modelos), fn ($v) => $v !== null)));
+      $achados = (new $r->relacionado())->newQuery()->whereIn($colunaNoOutro, $ids)->get();
+      foreach ($modelos as $m) {
+        $meus = $achados->filter(fn ($a) => $a->attributes[$colunaNoOutro] == ($m->attributes[$chaveDeCada] ?? null));
+        $m->relations[$nome] = $r->tipo === 'hasMany' ? $meus : $meus->first();
+      }
+    }
+
+    public function load(string ...$relacoes): static {
+      foreach ($relacoes as $nome) self::carregarJuntos([$this], $nome);
+      return $this;
+    }
+
+    // ----- ler e escrever colunas como propriedades: $curso->nome -----
+    private function converter(string $chave, mixed $valor): mixed {
+      if ($valor === null) return null;
+      $tipo = $this->casts[$chave] ?? null;
+      return match (true) {
+        $tipo === null => $valor,
+        in_array($tipo, ['int', 'integer']) => (int) $valor,
+        in_array($tipo, ['float', 'double', 'real']) => (float) $valor,
+        in_array($tipo, ['bool', 'boolean']) => (bool) $valor,
+        $tipo === 'string' => (string) $valor,
+        in_array($tipo, ['array', 'json']) => is_array($valor) ? $valor : json_decode($valor, true),
+        str_starts_with($tipo, 'decimal:') => number_format((float) $valor, (int) substr($tipo, 8), '.', ''),
+        default => $valor,
+      };
+    }
+
+    public function __get(string $chave): mixed {
+      if (array_key_exists($chave, $this->attributes)) return $this->converter($chave, $this->attributes[$chave]);
+      if (array_key_exists($chave, $this->relations)) return $this->relations[$chave];
+      if (method_exists($this, $chave)) {
+        $r = $this->$chave();
+        if ($r instanceof Relacao) return $this->relations[$chave] = $r->resultados();
+      }
+      if ($this->exists && !$this->wasRecentlyCreated) {
+        throw new MissingAttributeException("The attribute [$chave] either does not exist or was not retrieved for model [" . static::class . '].');
+      }
+      return null;
+    }
+
+    public function __set(string $chave, mixed $valor): void {
+      $this->attributes[$chave] = $valor;
+    }
+
+    public function __isset(string $chave): bool {
+      return $this->__get($chave) !== null;
+    }
+
+    public function __unset(string $chave): void {
+      unset($this->attributes[$chave]);
+    }
+
+    public function toArray(): array {
+      $dados = [];
+      foreach ($this->attributes as $k => $v) {
+        if (!in_array($k, $this->hidden, true)) $dados[$k] = $this->converter($k, $v);
+      }
+      foreach ($this->relations as $k => $r) $dados[$k] = $r?->toArray();
+      return $dados;
+    }
+
+    public function jsonSerialize(): array { return $this->toArray(); }
+    public function toJson(): string { return json_encode($this->toArray(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); }
+    public function __toString(): string { return $this->toJson(); }
+    public function __pgDump(): array { return [static::class, $this->toArray(), false]; }
+  }
+
+  // ===================== MIGRATIONS (database/migrations) =====================
+
+  class ColunaDefinida {
+    public bool $nula = false;
+    public bool $temPadrao = false;
+    public mixed $padrao = null;
+    public bool $unica = false;
+    public ?array $estrangeira = null;   // [tabela, coluna, ao apagar]
+
+    public function __construct(public string $nome, public string $tipo, public string $sqlTipo, private ?Blueprint $tabela = null) {}
+
+    public function nullable(bool $sim = true): static { $this->nula = $sim; return $this; }
+    public function default(mixed $valor): static { $this->temPadrao = true; $this->padrao = $valor; return $this; }
+    public function unique(): static { $this->unica = true; return $this; }
+    public function unsigned(): static { return $this; }
+    public function after(string $coluna): static { return $this; }       // no SQLite a coluna nova vai para o fim
+    public function comment(string $texto): static { return $this; }
+    public function index(): static { return $this; }
+
+    // foreignId('curso_id')->constrained(): aponta para cursos.id
+    public function constrained(?string $tabela = null, string $coluna = 'id'): static {
+      $this->estrangeira = [$tabela ?? Str::plural(preg_replace('/_id$/', '', $this->nome)), $coluna, null];
+      return $this;
+    }
+
+    public function references(string $coluna): static { $this->estrangeira[1] = $coluna; return $this; }
+    public function on(string $tabela): static { $this->estrangeira[0] = $tabela; return $this; }
+    public function cascadeOnDelete(): static { $this->estrangeira[2] = 'cascade'; return $this; }
+    public function nullOnDelete(): static { $this->estrangeira[2] = 'set null'; return $this; }
+    public function restrictOnDelete(): static { $this->estrangeira[2] = 'restrict'; return $this; }
+    public function onDelete(string $acao): static { $this->estrangeira[2] = $acao; return $this; }
+
+    public function sql(): string {
+      if ($this->tipo === 'id') return aspas($this->nome) . ' integer primary key autoincrement not null';
+      $sql = aspas($this->nome) . ' ' . $this->sqlTipo . ($this->nula ? '' : ' not null');
+      if ($this->temPadrao) {
+        $p = $this->padrao;
+        $sql .= ' default ' . ($p === null ? 'null' : "'" . str_replace("'", "''", (string) (is_bool($p) ? (int) $p : $p)) . "'");
+      }
+      return $sql;
+    }
+  }
+
+  class Blueprint {
+    public array $colunas = [];
+    public array $depois = [];      // comandos que vêm depois (índices únicos, drop/rename de coluna)
+
+    public function __construct(public string $tabela, public bool $criando) {}
+
+    private function coluna(string $nome, string $tipo, string $sqlTipo): ColunaDefinida {
+      return $this->colunas[] = new ColunaDefinida($nome, $tipo, $sqlTipo, $this);
+    }
+
+    public function id(string $nome = 'id'): ColunaDefinida { return $this->coluna($nome, 'id', 'integer'); }
+    public function increments(string $nome): ColunaDefinida { return $this->id($nome); }
+    public function string(string $nome, int $tamanho = 255): ColunaDefinida { return $this->coluna($nome, 'string', 'varchar'); }
+    public function char(string $nome, int $tamanho = 255): ColunaDefinida { return $this->coluna($nome, 'char', 'varchar'); }
+    public function text(string $nome): ColunaDefinida { return $this->coluna($nome, 'text', 'text'); }
+    public function longText(string $nome): ColunaDefinida { return $this->coluna($nome, 'text', 'text'); }
+    public function integer(string $nome): ColunaDefinida { return $this->coluna($nome, 'integer', 'integer'); }
+    public function tinyInteger(string $nome): ColunaDefinida { return $this->coluna($nome, 'integer', 'integer'); }
+    public function smallInteger(string $nome): ColunaDefinida { return $this->coluna($nome, 'integer', 'integer'); }
+    public function bigInteger(string $nome): ColunaDefinida { return $this->coluna($nome, 'integer', 'integer'); }
+    public function unsignedInteger(string $nome): ColunaDefinida { return $this->coluna($nome, 'integer', 'integer'); }
+    public function unsignedBigInteger(string $nome): ColunaDefinida { return $this->coluna($nome, 'integer', 'integer'); }
+    public function decimal(string $nome, int $total = 8, int $casas = 2): ColunaDefinida { return $this->coluna($nome, 'decimal', 'numeric'); }
+    public function float(string $nome): ColunaDefinida { return $this->coluna($nome, 'float', 'float'); }
+    public function double(string $nome): ColunaDefinida { return $this->coluna($nome, 'double', 'double'); }
+    public function boolean(string $nome): ColunaDefinida { return $this->coluna($nome, 'boolean', 'tinyint(1)'); }
+    public function date(string $nome): ColunaDefinida { return $this->coluna($nome, 'date', 'date'); }
+    public function dateTime(string $nome): ColunaDefinida { return $this->coluna($nome, 'datetime', 'datetime'); }
+    public function time(string $nome): ColunaDefinida { return $this->coluna($nome, 'time', 'time'); }
+    public function timestamp(string $nome): ColunaDefinida { return $this->coluna($nome, 'datetime', 'datetime'); }
+    public function json(string $nome): ColunaDefinida { return $this->coluna($nome, 'json', 'text'); }
+
+    public function enum(string $nome, array $opcoes): ColunaDefinida {
+      $lista = implode(', ', array_map(fn ($o) => "'" . $o . "'", $opcoes));
+      return $this->coluna($nome, 'enum', 'varchar check (' . aspas($nome) . " in ($lista))");
+    }
+
+    public function foreignId(string $nome): ColunaDefinida { return $this->coluna($nome, 'foreignId', 'integer'); }
+
+    public function timestamps(): void {
+      $this->timestamp('created_at')->nullable();
+      $this->timestamp('updated_at')->nullable();
+    }
+
+    public function unique(string|array $colunas): void {
+      $colunas = (array) $colunas;
+      $nome = $this->tabela . '_' . implode('_', $colunas) . '_unique';
+      $this->depois[] = 'create unique index ' . aspas($nome) . ' on ' . aspas($this->tabela) . ' (' . implode(', ', array_map('aspas', $colunas)) . ')';
+    }
+
+    public function dropColumn(string|array ...$colunas): void {
+      foreach (is_array($colunas[0]) ? $colunas[0] : $colunas as $c) {
+        $this->depois[] = 'alter table ' . aspas($this->tabela) . ' drop column ' . aspas($c);
+      }
+    }
+
+    public function renameColumn(string $de, string $para): void {
+      $this->depois[] = 'alter table ' . aspas($this->tabela) . ' rename column ' . aspas($de) . ' to ' . aspas($para);
+    }
+
+    public function dropTimestamps(): void { $this->dropColumn('created_at', 'updated_at'); }
+
+    // o SQL que o Laravel manda para o banco
+    public function comandos(): array {
+      $sqls = [];
+      $estrangeiras = [];
+      foreach ($this->colunas as $c) {
+        if ($c->estrangeira) {
+          [$t, $col, $acao] = $c->estrangeira;
+          $estrangeiras[] = 'foreign key(' . aspas($c->nome) . ') references ' . aspas($t) . '(' . aspas($col) . ')' . ($acao ? " on delete $acao" : '');
+        }
+      }
+      if ($this->criando) {
+        $partes = array_merge(array_map(fn ($c) => $c->sql(), $this->colunas), $estrangeiras);
+        $sqls[] = 'create table ' . aspas($this->tabela) . ' (' . implode(', ', $partes) . ')';
+      } else {
+        foreach ($this->colunas as $c) {
+          $sql = 'alter table ' . aspas($this->tabela) . ' add column ' . $c->sql();
+          if ($c->estrangeira) {
+            [$t, $col, $acao] = $c->estrangeira;
+            $sql .= ' references ' . aspas($t) . '(' . aspas($col) . ')' . ($acao ? " on delete $acao" : '');
+          }
+          $sqls[] = $sql;
+        }
+      }
+      foreach ($this->colunas as $c) {
+        if ($c->unica) {
+          $sqls[] = 'create unique index ' . aspas($this->tabela . '_' . $c->nome . '_unique') . ' on ' . aspas($this->tabela) . ' (' . aspas($c->nome) . ')';
+        }
+      }
+      return array_merge($sqls, $this->depois);
+    }
+  }
+
+  class Schema {
+    public static function create(string $tabela, Closure $definicao): void {
+      $b = new Blueprint($tabela, true);
+      $definicao($b);
+      foreach ($b->comandos() as $sql) DB::statement($sql);
+    }
+
+    public static function table(string $tabela, Closure $definicao): void {
+      $b = new Blueprint($tabela, false);
+      $definicao($b);
+      foreach ($b->comandos() as $sql) DB::statement($sql);
+    }
+
+    public static function drop(string $tabela): void {
+      DB::statement('drop table ' . aspas($tabela));
+    }
+
+    public static function dropIfExists(string $tabela): void {
+      DB::statement('drop table if exists ' . aspas($tabela));
+    }
+
+    public static function rename(string $de, string $para): void {
+      DB::statement('alter table ' . aspas($de) . ' rename to ' . aspas($para));
+    }
+
+    public static function hasTable(string $tabela): bool {
+      return (bool) DB::pdo()->query("select count(*) from sqlite_master where type = 'table' and name = " . DB::pdo()->quote($tabela))->fetchColumn();
+    }
+
+    public static function getColumnListing(string $tabela): array {
+      return array_column(DB::pdo()->query('pragma table_info(' . aspas($tabela) . ')')->fetchAll(), 'name');
+    }
+
+    public static function hasColumn(string $tabela, string $coluna): bool {
+      return in_array($coluna, self::getColumnListing($tabela), true);
+    }
+
+    public static function getTables(): array {
+      return DB::pdo()->query("select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name")->fetchAll(PDO::FETCH_COLUMN);
+    }
+  }
+
+  abstract class Migration {
+    abstract public function up(): void;
+    public function down(): void {}
+  }
+
+  class Migrator {
+    public static array $arquivos = [];   // nome do arquivo => objeto da migration
+
+    public static function linha(string $esquerda, string $direita): string {
+      $pontos = max(3, 76 - letras($esquerda) - letras($direita));
+      return '  ' . $esquerda . ' ' . str_repeat('.', $pontos) . ' ' . $direita;
+    }
+
+    private static function tabelaDeControle(): void {
+      if (Schema::hasTable('migrations')) return;
+      echo "   INFO  Preparing database.\n";
+      DB::statement('create table "migrations" ("id" integer primary key autoincrement not null, "migration" varchar not null, "batch" integer not null)');
+      echo self::linha('Creating migration table', 'DONE'), "\n";
+    }
+
+    // a tabela migrations guarda quais arquivos já rodaram (e em qual "lote")
+    private static function jaRodaram(): array {
+      if (!Schema::hasTable('migrations')) return [];
+      return DB::pdo()->query('select migration, batch from migrations order by id')->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    public static function migrar(bool $fingir = false): void {
+      if (!$fingir) self::tabelaDeControle();
+      $feitas = self::jaRodaram();
+      $pendentes = array_diff(array_keys(self::$arquivos), array_keys($feitas));
+      sort($pendentes);
+      if (!$pendentes) {
+        echo "   INFO  Nothing to migrate.\n";
+        return;
+      }
+      echo "   INFO  Running migrations.\n";
+      $lote = ($feitas ? max($feitas) : 0) + 1;
+      foreach ($pendentes as $nome) {
+        if ($fingir) {
+          DB::$fingindo = [];
+          try { self::$arquivos[$nome]->up(); } finally { $sqls = DB::$fingindo; DB::$fingindo = null; }
+          echo self::linha($nome, ''), "\n";
+          foreach ($sqls as $sql) echo "  ⇂ $sql\n";
+          continue;
+        }
+        self::$arquivos[$nome]->up();
+        DB::insert('insert into "migrations" ("migration", "batch") values (?, ?)', [$nome, $lote]);
+        echo self::linha($nome, 'DONE'), "\n";
+      }
+    }
+
+    public static function voltar(bool $tudo = false): void {
+      $feitas = self::jaRodaram();
+      if (!$feitas) {
+        echo "   INFO  Nothing to rollback.\n";
+        return;
+      }
+      $ultimo = max($feitas);
+      $voltar = array_keys(array_filter($feitas, fn ($b) => $tudo || $b === $ultimo));
+      rsort($voltar);
+      echo "   INFO  Rolling back migrations.\n";
+      foreach ($voltar as $nome) {
+        if (isset(self::$arquivos[$nome])) self::$arquivos[$nome]->down();
+        DB::delete('delete from "migrations" where "migration" = ?', [$nome]);
+        echo self::linha($nome, 'DONE'), "\n";
+      }
+    }
+
+    public static function status(): void {
+      $feitas = self::jaRodaram();
+      $todas = array_unique(array_merge(array_keys(self::$arquivos), array_keys($feitas)));
+      sort($todas);
+      if (!$todas) {
+        echo "   ERROR  No migrations found.\n";
+        return;
+      }
+      echo self::linha('Migration name', 'Batch / Status'), "\n";
+      foreach ($todas as $nome) {
+        echo self::linha($nome, isset($feitas[$nome]) ? '[' . $feitas[$nome] . '] Ran' : 'Pending'), "\n";
+      }
+    }
+
+    public static function apagarTudo(): void {
+      DB::statement('PRAGMA foreign_keys = OFF');
+      foreach (Schema::getTables() as $t) DB::statement('drop table ' . aspas($t));
+      DB::statement('PRAGMA foreign_keys = ON');
+      echo self::linha('Dropping all tables', 'DONE'), "\n";
+    }
+  }
+
+  function criar_migration(string $nome, Migration $migration): void {
+    Migrator::$arquivos[$nome] = $migration;
+  }
+
+  // ===================== SEEDERS (database/seeders) =====================
+
+  abstract class Seeder {
+    abstract public function run(): void;
+
+    public function call(string|array $classes): void {
+      foreach ((array) $classes as $classe) {
+        echo Migrator::linha($classe, 'RUNNING'), "\n";
+        (new $classe())->run();
+        echo Migrator::linha($classe, 'DONE'), "\n";
+      }
+    }
+  }
+
+  function semear(string $classe = 'DatabaseSeeder'): void {
+    if (!class_exists($classe)) throw new Exception("A classe $classe não existe (crie o seeder antes de rodar o db:seed)");
+    echo "   INFO  Seeding database.\n";
+    (new $classe())->run();
+  }
+
+  // ===================== ARTISAN (o terminal) =====================
+  // artisan("migrate") faz o papel de digitar php artisan migrate no terminal
+
+  function artisan(string $comando): void {
+    $partes = preg_split('/\s+/', trim($comando));
+    $nome = array_shift($partes);
+    $opcoes = [];
+    $args = [];
+    foreach ($partes as $p) {
+      if (preg_match('/^--([\w-]+)(?:=(.*))?$/', $p, $m)) $opcoes[$m[1]] = $m[2] ?? true;
+      elseif (preg_match('/^-(\w+)$/', $p, $m)) foreach (str_split($m[1]) as $l) $opcoes[$l] = true;
+      else $args[] = $p;
+    }
+    $seed = fn () => isset($opcoes['seed']) ? semear() : null;
+    $arquivo = fn (string $tipo, string $caminho) => print("   INFO  $tipo [$caminho] created successfully.\n");
+    match ($nome) {
+      'migrate' => [Migrator::migrar(isset($opcoes['pretend'])), $seed()],
+      'migrate:rollback' => Migrator::voltar(),
+      'migrate:reset' => Migrator::voltar(true),
+      'migrate:refresh' => [Migrator::voltar(true), Migrator::migrar(), $seed()],
+      'migrate:fresh' => [Migrator::apagarTudo(), Migrator::migrar(), $seed()],
+      'migrate:status' => Migrator::status(),
+      'db:seed' => semear($opcoes['class'] ?? 'DatabaseSeeder'),
+      'make:migration' => $arquivo('Migration', 'database/migrations/' . date('Y_m_d_His') . '_' . ($args[0] ?? 'nova') . '.php'),
+      'make:model' => [
+        $arquivo('Model', 'app/Models/' . ($args[0] ?? 'Model') . '.php'),
+        isset($opcoes['m']) || isset($opcoes['migration'])
+          ? $arquivo('Migration', 'database/migrations/' . date('Y_m_d_His') . '_create_' . Str::plural(Str::snake($args[0] ?? 'model')) . '_table.php') : null,
+      ],
+      'make:seeder' => $arquivo('Seeder', 'database/seeders/' . ($args[0] ?? 'Seeder') . '.php'),
+      'make:controller' => $arquivo('Controller', 'app/Http/Controllers/' . ($args[0] ?? 'Controller') . '.php'),
+      default => print("   ERROR  Command \"$nome\" is not defined.\n"),
+    };
+  }
+
+  // ver_tabela("cursos"): mostra as linhas de uma tabela (só do playground; no computador use um programa de banco)
+  // por padrão esconde created_at e updated_at; passe as colunas para escolher: ver_tabela("cursos", ["id", "nome"])
+  function ver_tabela(string $tabela, ?array $colunas = null): void {
+    $linhas = DB::pdo()->query('select * from ' . aspas($tabela))->fetchAll();
+    $colunas ??= array_values(array_diff(Schema::getColumnListing($tabela), ['created_at', 'updated_at']));
+    $texto = fn ($v) => $v === null ? 'NULL' : (string) $v;
+    $larg = [];
+    foreach ($colunas as $c) {
+      $larg[$c] = letras($c);
+      foreach ($linhas as $l) $larg[$c] = max($larg[$c], letras($texto($l[$c] ?? null)));
+    }
+    $sep = '+' . implode('+', array_map(fn ($c) => str_repeat('-', $larg[$c] + 2), $colunas)) . '+';
+    $fmt = fn ($vals) => '| ' . implode(' | ', array_map(fn ($c) => $vals[$c] . str_repeat(' ', $larg[$c] - letras($vals[$c])), $colunas)) . ' |';
+    $n = count($linhas);
+    echo "$tabela ($n " . ($n === 1 ? 'linha' : 'linhas') . ")\n$sep\n", $fmt(array_combine($colunas, $colunas)), "\n$sep\n";
+    foreach ($linhas as $l) echo $fmt(array_combine($colunas, array_map(fn ($c) => $texto($l[$c] ?? null), $colunas))), "\n";
+    if ($n) echo "$sep\n";
+  }
+
+  // os nomes de verdade do Laravel também funcionam (ex.: use Illuminate\Database\Eloquent\Model;)
+  foreach ([
+    'Model' => 'Illuminate\Database\Eloquent\Model',
+    'Migration' => 'Illuminate\Database\Migrations\Migration',
+    'Blueprint' => 'Illuminate\Database\Schema\Blueprint',
+    'Schema' => 'Illuminate\Support\Facades\Schema',
+    'DB' => 'Illuminate\Support\Facades\DB',
+    'Route' => 'Illuminate\Support\Facades\Route',
+    'Seeder' => 'Illuminate\Database\Seeder',
+    'Collection' => 'Illuminate\Support\Collection',
+    'Str' => 'Illuminate\Support\Str',
+    'QueryException' => 'Illuminate\Database\QueryException',
+    'ModelNotFoundException' => 'Illuminate\Database\Eloquent\ModelNotFoundException',
+  ] as $curto => $completo) {
+    class_alias($curto, $completo);
+  }
+
+  // dump() e dd() para quem roda no computador (no site eles já vêm prontos)
+  if (!function_exists('dump')) {
+    function __ml_fmt(mixed $v, int $n = 0): string {
+      $pad = str_repeat('  ', $n);
+      if (is_string($v)) return '"' . $v . '"';
+      if (is_bool($v)) return $v ? 'true' : 'false';
+      if ($v === null) return 'null';
+      if (is_int($v) || is_float($v)) return (string) $v;
+      if (is_object($v)) {
+        [$nome, $vars, $lista] = method_exists($v, '__pgDump') ? $v->__pgDump() : [get_class($v), get_object_vars($v), false];
+        $s = $nome . ($lista ? ':' . count($vars) . ' [' : ' {') . "\n";
+        foreach ($vars as $k => $x) $s .= $pad . '  ' . ($lista ? $k . ' => ' : '+' . $k . ': ') . __ml_fmt($x, $n + 1) . "\n";
+        return $s . $pad . ($lista ? ']' : '}');
+      }
+      if (is_array($v)) {
+        if (!$v) return '[]';
+        $s = 'array:' . count($v) . " [\n";
+        foreach ($v as $k => $x) $s .= $pad . '  ' . (is_int($k) ? $k : '"' . $k . '"') . ' => ' . __ml_fmt($x, $n + 1) . "\n";
+        return $s . $pad . ']';
+      }
+      return gettype($v);
+    }
+    function dump(mixed ...$vars): void { foreach ($vars as $v) echo __ml_fmt($v), "\n"; }
+    function dd(mixed ...$vars): never { dump(...$vars); exit; }
+  }
+}
+</script>
+
+<script>
+(function(){
+  // ---------- Carrega exemplos ----------
+  const exs = [...document.querySelectorAll('#examples .ex')].map(s => ({
+    group: s.dataset.group, title: s.dataset.title,
+    desc: s.querySelector('.desc').innerHTML,
+    tryit: s.querySelector('.try') ? s.querySelector('.try').innerHTML : '',
+    expect: s.dataset.expect ? JSON.parse(s.dataset.expect) : null,
+    kit: s.dataset.kit ? document.getElementById('kit-' + s.dataset.kit).textContent.trim() : '',
+    code: s.querySelector('script').textContent.replace(/^\n/, '').replace(/\s+$/, '') + '\n'
+  }));
+  const edits = exs.map(e => e.code);
+  let cur = 0;
+  const $ = id => document.getElementById(id);
+  const code = $('code'), hl = $('hl'), out = $('out'), status = $('status');
+
+  // ---------- Menu ----------
+  const nav = $('nav'), mnav = $('mnav'); let lastG = null;
+  exs.forEach((e, i) => {
+    if (e.group !== lastG) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = e.group; nav.appendChild(g); lastG = e.group; }
+    const b = document.createElement('button'); b.className = 'nav';
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span>`;
+    b.appendChild(document.createTextNode(e.title)); b.onclick = () => show(i); nav.appendChild(b);
+    const o = document.createElement('option'); o.value = i; o.textContent = `${String(i + 1).padStart(2, '0')} · ${e.group} · ${e.title}`; mnav.appendChild(o);
+  });
+  mnav.onchange = () => show(+mnav.value);
+
+  // ---------- Destaque de sintaxe (PHP) ----------
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const re = /(\{\{--[\s\S]*?--\}\}|\/\/[^\n]*|#[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?)|(<\?php|\?>|\{\{|\}\}|\{!!|!!\}|\B@[a-z]+\b)|(\$[A-Za-z_]\w*)|\b(echo|print|if|elseif|else|while|do|for|foreach|as|switch|case|break|default|return|function|fn|new|class|public|private|protected|static|null|true|false|and|or|not|array|int|float|string|bool|void|match|continue|use|namespace|require|include|try|catch|throw|extends|implements|isset|empty|unset|list|const|self|parent|abstract|readonly|interface|instanceof|Closure)\b|\b(\d+(?:\.\d+)?)\b/g;
+  function highlight(src){
+    let h = '', last = 0, m; re.lastIndex = 0;
+    while ((m = re.exec(src))) {
+      h += esc(src.slice(last, m.index));
+      const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : m[4] ? 'v' : m[5] ? 'k' : 'd';
+      h += `<span class="${cls}">${esc(m[0])}</span>`;
+      last = re.lastIndex;
+    }
+    return h + esc(src.slice(last)) + '\n';
+  }
+  function paint(){ hl.innerHTML = highlight(code.value); hl.scrollTop = code.scrollTop; hl.scrollLeft = code.scrollLeft; }
+  code.addEventListener('input', () => { edits[cur] = code.value; paint(); });
+  code.addEventListener('scroll', () => { hl.scrollTop = code.scrollTop; hl.scrollLeft = code.scrollLeft; });
+  code.addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); code.setRangeText('  ', code.selectionStart, code.selectionEnd, 'end'); code.dispatchEvent(new Event('input')); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); }
+  });
+
+  // ---------- Mostrar exemplo ----------
+  function show(i){
+    cur = Math.max(0, Math.min(exs.length - 1, i)); const e = exs[cur];
+    $('grp').textContent = e.group; $('title').textContent = e.title; $('desc').innerHTML = e.desc; $('try').innerHTML = e.tryit;
+    code.value = edits[cur]; code.scrollTop = 0; paint();
+    [...nav.querySelectorAll('.nav')].forEach((b, j) => b.classList.toggle('on', j === cur));
+    mnav.value = cur; $('pos').textContent = `${cur + 1} de ${exs.length}`;
+    $('prev').disabled = cur === 0; $('next').disabled = cur === exs.length - 1;
+    clearOut(); try { history.replaceState(null, '', '#' + (cur + 1)); } catch(_){}
+  }
+
+  // ---------- Saída ----------
+  const MAX_LINES = 300; let lines = 0, hidden = 0, got = [], raw = '';
+  const pageBtn = $('aspage'), pageFrame = $('pageframe'); let asPage = false;
+  function setView(p){ asPage = p; out.hidden = p; pageFrame.hidden = !p; pageBtn.textContent = p ? '≡ ver como texto' : '🌐 ver como página'; if (p) pageFrame.srcdoc = raw; }
+  pageBtn.onclick = () => setView(!asPage);
+  function clearOut(){ out.innerHTML = '<div class="empty">Clique em ▶ Executar para ver o resultado aqui.</div>'; status.textContent = ''; status.className = 'status'; lines = 0; hidden = 0; got = []; raw = ''; if (asPage) setView(false); }
+  function addLine(text, cls){
+    if (lines === 0) out.innerHTML = '';
+    if (!cls) got.push(String(text).trim());
+    if (lines >= MAX_LINES && !cls) { hidden++; return; }
+    lines++;
+    const d = document.createElement('div'); d.className = 'ln' + (cls ? ' ' + cls : '');
+    if (cls !== 'tip' && cls !== 'win') { const n = document.createElement('span'); n.className = 'i'; n.textContent = cls === 'err' ? '!' : lines; d.appendChild(n); }
+    const t = document.createElement('span'); t.textContent = text; d.appendChild(t);
+    out.appendChild(d); out.scrollTop = out.scrollHeight;
+  }
+  function dica(msg){
+    if (/no such table: (\w+)/.test(msg)) { const tb = msg.match(/no such table: (\w+)/)[1]; return `Dica: a tabela "${tb}" não existe no banco. Rodou o artisan("migrate") antes de usar? O nome na migration é o mesmo? Lembre que o Model chuta o nome em inglês (Professor → professors): use protected $table = "nome_certo";`; }
+    if (/has no column named|no such column/.test(msg)) return 'Dica: essa coluna não existe na tabela. Confira o nome (o banco mostra o nome que não achou) e se ela está na migration (e se a migration rodou).';
+    if (/NOT NULL constraint failed/.test(msg)) return 'Dica: uma coluna obrigatória ficou sem valor. Mande o valor, ou deixe a coluna opcional na migration com ->nullable() (ou dê um ->default()). Usou create()? Confira se a coluna está no $fillable: o que está fora dele é ignorado sem aviso.';
+    if (/UNIQUE constraint failed/.test(msg)) return 'Dica: já existe uma linha com esse valor numa coluna ->unique(). Mude o valor ou verifique antes com where(...)->exists().';
+    if (/FOREIGN KEY constraint failed/.test(msg)) return 'Dica: a chave estrangeira aponta para um id que não existe na outra tabela (ou você apagou algo que ainda tem "filhos"). Crie o registro pai primeiro.';
+    if (/Cannot add a NOT NULL column/.test(msg)) return 'Dica: a tabela já tem linhas, e a coluna nova não tem valor para elas. Use ->nullable() ou ->default(...) na coluna nova.';
+    if (/already exists/.test(msg) && /table/.test(msg)) return 'Dica: essa tabela já existe. Duas migrations criam a mesma tabela? Para mudar uma tabela existente use Schema::table, não Schema::create.';
+    if (/to fillable property to allow mass assignment/.test(msg)) return 'Dica: o create()/update() só preenche colunas listadas no $fillable do Model: protected $fillable = ["nome", ...];';
+    if (/either does not exist or was not retrieved/.test(msg)) return 'Dica: essa coluna não existe no model. Confira o nome (maiúsculas contam) e a migration.';
+    if (/No query results for model/.test(msg)) return 'Dica: o findOrFail/firstOrFail não achou nada. Dentro de uma rota isso vira 404; fora dela, aparece como erro.';
+    if (/A classe .* não existe \(crie o seeder/.test(msg)) return 'Dica: crie a classe DatabaseSeeder (extends Seeder, com o método run) antes de rodar o db:seed ou o --seed.';
+    if (/Class "Database\\Seeders|Target class/.test(msg)) return 'Dica: o seeder chamado no $this->call() não existe. Confira o nome da classe.';
+    if (/Call to undefined method (Builder|Collection|Relacao)::/.test(msg)) return 'Dica: esse método não existe numa consulta/lista. Confira o nome (where, orderBy, get, first, count, pluck...) e a ordem: o get() vem por último.';
+    if (/Call to a member function .* on null/.test(msg)) return 'Dica: a busca não achou nada e devolveu null (find, first...). Confira o id/where, ou use findOrFail.';
+    if (/não existe \(crie com criar_view\)/.test(msg)) return 'Dica: o nome no view("...") tem que ser igual ao do criar_view("..."). A pasta vira ponto: resources/views/cursos/index.blade.php é "cursos.index".';
+    if (/A rota ".*" não existe/.test(msg)) return 'Dica: nenhuma rota tem esse ->name("..."). Confira o nome (com o ponto) e se a rota foi registrada antes de chamar route().';
+    if (/Faltou o parâmetro/.test(msg)) return 'Dica: essa rota tem um {parâmetro}: passe o valor no route(), ex.: route("cursos.show", 3).';
+    if (/Faltou o @endsection/.test(msg)) return 'Dica: todo @section("nome") com conteúdo termina com @endsection (a forma curta @section("titulo", "Texto") não precisa).';
+    if (/eval\(\)'d code/.test(msg) && /syntax error|unexpected/.test(msg)) return 'Dica: erro dentro de uma view Blade. Confira se todo @if tem @endif, todo @foreach tem @endforeach, e se as variáveis têm $ (inclusive no "as $item").';
+    if (/eval\(\)'d code/.test(msg) && /Undefined variable/.test(msg)) return 'Dica: essa variável não chegou na view. Tudo o que a view usa precisa estar no array do view("nome", [...]).';
+    if (/Undefined constant/.test(msg)) return 'Dica: faltou o $ na variável. No PHP e no Blade, toda variável começa com $.';
+    if (/unexpected end of file/.test(msg)) return 'Dica: o PHP chegou ao fim do arquivo esperando algo. Faltou fechar uma chave } ou uma aspa.';
+    if (/expecting "?;"?/.test(msg) || /unexpected .* expecting/.test(msg)) return 'Dica: erro de digitação perto dessa linha. Em PHP toda instrução termina com ; e as variáveis começam com $.';
+    if (/syntax error/.test(msg)) return 'Dica: erro de sintaxe. Confira parênteses ( ), chaves { }, aspas e o ; no fim da linha anterior.';
+    if (/Undefined variable/.test(msg)) return 'Dica: essa variável não existe (ou está escrita diferente). Em PHP toda variável começa com $ e maiúsculas contam.';
+    if (/Call to undefined function/.test(msg)) return 'Dica: essa função não existe. Confira o nome (ex.: strlen, count, strtoupper) ou declare a função antes de chamar.';
+    if (/Undefined array key/.test(msg)) return 'Dica: essa chave não existe no array. Confira o nome da chave (ou o índice: começa em 0).';
+    if (/Division by zero/.test(msg)) return 'Dica: divisão por zero. Confira o divisor (um array vazio tem count 0).';
+    if (/Cannot redeclare/.test(msg)) return 'Dica: a função foi declarada duas vezes. Deixe só uma function com esse nome.';
+    if (/Unsupported operand types|must be of type/.test(msg)) return 'Dica: tipo errado. Confira se o valor é número ou texto; para juntar textos use o ponto (.), não o +.';
+    if (/Too few arguments/.test(msg)) return 'Dica: a função foi chamada com menos argumentos do que pede.';
+    if (/Array to string conversion/.test(msg)) return 'Dica: você tentou mostrar um array inteiro com echo. Use foreach, implode ou print_r.';
+    if (/Class ".*" not found/.test(msg)) return 'Dica: essa classe não existe. Confira o nome (maiúsculas contam), se ela foi declarada e, com namespace, se faltou o use.';
+    if (/Call to undefined method/.test(msg)) return 'Dica: esse método não existe na classe. Confira o nome e se ele está dentro das chaves { } da classe.';
+    if (/Cannot (access|modify) private/.test(msg) || /Call to private method/.test(msg)) return 'Dica: isso é private: só pode ser usado de dentro da classe. Use um método public para acessar.';
+    if (/must not be accessed before initialization/.test(msg)) return 'Dica: essa propriedade ainda não recebeu valor. Preencha antes de usar (ou use um construtor).';
+    if (/Cannot declare class|Cannot redeclare class/.test(msg)) return 'Dica: a classe foi declarada duas vezes. Deixe só uma class com esse nome.';
+    if (/Using \$this when not in object context/.test(msg)) return 'Dica: $this só existe dentro de um método chamado por um objeto (não em métodos static).';
+    if (/Object of class .* could not be converted to string/.test(msg)) return 'Dica: você tentou dar echo num objeto inteiro. Mostre uma propriedade ($obj->nome) ou use dump($obj).';
+    if (/Undefined property/.test(msg)) return 'Dica: essa propriedade não existe no objeto. Confira o nome (sem $ depois da setinha: $obj->nome).';
+    return '';
+  }
+
+  // ---------- Execução no Worker com PHP (php-wasm) ----------
+  let worker = null, ready = false, timer = null, t0 = 0, runId = 0, pendingRun = null;
+  const runBtn = $('run');
+  function boot(quiet){
+    ready = false; runBtn.disabled = true; runBtn.textContent = '⏳ Carregando PHP…';
+    if (!quiet) { status.className = 'status'; status.textContent = 'Carregando o PHP e o SQLite no navegador (15 MB, só na primeira vez)…'; }
+    worker = new Worker('/php/runner.js?libs=sqlite', { type: 'module' });
+    worker.onmessage = ({ data }) => {
+      if (data.ready) { ready = true; runBtn.disabled = false; runBtn.textContent = '▶ Executar'; if (!lines && !/✓|✗/.test(status.textContent)) status.textContent = 'PHP ' + (data.version || '') + ' pronto.'; if (pendingRun) { const s = pendingRun; pendingRun = null; exec(s); } return; }
+      if (data.id !== runId || !timer) return;
+      clearTimeout(timer); timer = null;
+      let hadErr = false;
+      raw = data.out.filter(([t]) => t === 'out').map(([, x]) => x).join('');
+      for (const [t, text] of data.out) for (const ln of text.replace(/\n$/, '').split('\n')) {
+        if (!ln.trim()) continue;
+        const isErr = t === 'err' || /^(PHP )?(Fatal error|Parse error|Warning|Notice|Deprecated)\b/.test(ln);
+        addLine(ln, isErr ? 'err' : undefined);
+        if (isErr) { hadErr = true; const d = dica(ln); if (d) addLine(d, 'tip'); }
+      }
+      if (data.fatal) { addLine(data.fatal, 'err'); hadErr = true; }
+      finish(!hadErr, hadErr ? '✗ O código tem um erro' : `✓ Executado em ${Math.round(performance.now() - t0)} ms`);
+    };
+    worker.onerror = ev => { ev.preventDefault(); status.className = 'status bad'; status.textContent = 'Não consegui carregar o PHP: ' + (ev.message || 'erro'); };
+  }
+  function finish(ok, msg){
+    timer = null;
+    if (hidden) addLine(`… mais ${hidden} linha(s) não mostrada(s)`, 'tip');
+    if (lines === 0 && ok) out.innerHTML = '<div class="empty">(O código rodou, mas não mostrou nada. Faltou um echo?)</div>';
+    const exp = exs[cur].expect;
+    if (ok && exp) {
+      let k = 0; for (const g of got) { if (k < exp.length && g === exp[k]) k++; }
+      if (k === exp.length) { addLine('🎉 Correto! A saída bate com a esperada. Agora faça o "teste também" lá em cima.', 'win'); msg = '✓ Exercício resolvido!'; }
+      else if (got.length === 0) { addLine('Nada apareceu na saída. Em PHP, o que aparece é o que você manda com echo.', 'tip'); ok = false; msg = '✗ Nada foi mostrado: faltou um echo?'; }
+      else { addLine('Ainda não bateu. Compare com a "Saída esperada" lá em cima: cada letra, espaço e acento conta. Esperado: ' + exp.slice(0, 4).join(' | ') + (exp.length > 4 ? ' …' : ''), 'tip'); ok = false; msg = '✗ Ainda não: confira a saída esperada'; }
+    }
+    status.className = 'status ' + (ok ? 'ok' : 'bad'); status.textContent = msg;
+    if (asPage) pageFrame.srcdoc = raw;
+  }
+  function exec(src){
+    runId++; const id = runId; t0 = performance.now();
+    timer = setTimeout(() => {
+      addLine('⏱ Execução interrompida depois de 3 segundos: parece um loop infinito! A condição do while nunca ficou false.', 'tip');
+      finish(false, '✗ Loop infinito interrompido'); worker.terminate(); boot(true);
+    }, 3000);
+    worker.postMessage({ id, code: src, kit: exs[cur].kit });
+  }
+  function run(){
+    clearOut(); out.innerHTML = ''; lines = 0;
+    status.className = 'status'; status.textContent = 'Executando…';
+    const src = code.value;
+    if (!/^\s*<\?php/.test(src)) addLine('Dica: todo arquivo PHP começa com <?php. Sem ele, o PHP devolve o texto do jeito que está.', 'tip');
+    if (!ready) { pendingRun = src; status.textContent = 'Esperando o PHP carregar…'; return; }
+    exec(src);
+  }
+  boot();
+
+  // ---------- Botões ----------
+  runBtn.onclick = run; $('clear').onclick = clearOut;
+  $('reset').onclick = () => { edits[cur] = exs[cur].code; code.value = edits[cur]; paint(); clearOut(); };
+  $('prev').onclick = () => show(cur - 1); $('next').onclick = () => show(cur + 1);
+  const root = document.documentElement; const defFs = window.innerWidth < 1000 ? 16 : 22;
+  let fs = defFs; try { fs = +localStorage.getItem('pg-fs') || defFs; } catch(_){}
+  const setFs = v => { fs = Math.max(14, Math.min(40, v)); root.style.setProperty('--fs', fs + 'px'); try { localStorage.setItem('pg-fs', fs); } catch(_){} };
+  setFs(fs); $('bigger').onclick = () => setFs(fs + 2); $('smaller').onclick = () => setFs(fs - 2);
+  document.addEventListener('keydown', e => { if (document.activeElement === code) return; if (e.key === 'ArrowRight') show(cur + 1); if (e.key === 'ArrowLeft') show(cur - 1); });
+  const start = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>
